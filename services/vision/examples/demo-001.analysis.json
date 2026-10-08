@@ -1,0 +1,51 @@
+{
+  "video_uri": "mock://demo-001/no-video",
+  "fps": 10.0,
+  "frame_count": 200,
+  "duration_seconds": 20.0,
+  "resolution": [
+    640,
+    360
+  ],
+  "sample_fps": 5.0,
+  "sampled_frame_count": 99,
+  "missing_frames": [
+    58,
+    59
+  ],
+  "low_confidence_dropped": 5,
+  "tracks": [
+    {
+      "track_id": 1,
+      "label": "car",
+      "first_frame": 0,
+      "last_frame": 198,
+      "start_seconds": 0.0,
+      "end_seconds": 19.8,
+      "detections": 99,
+      "mean_confidence": 0.86
+    },
+    {
+      "track_id": 2,
+      "label": "truck",
+      "first_frame": 0,
+      "last_frame": 198,
+      "start_seconds": 0.0,
+      "end_seconds": 19.8,
+      "detections": 99,
+      "mean_confidence": 0.71
+    }
+  ],
+  "event": {
+    "timestamp_seconds": 11.2,
+    "frame_index": 112,
+    "track_id": 1,
+    "growth_per_second": 1.5691,
+    "window": [
+      9.2,
+      12.2
+    ]
+  },
+  "signals": [],
+  "warnings": []
+}
