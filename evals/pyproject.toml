@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "witness-evals"
+version = "0.1.0"
+description = "Offline Witness evaluations: event localization against labeled time_of_event"
+requires-python = ">=3.11"
+dependencies = []  # stdlib only; --videos mode needs witness-vision[yolo]
+
+[project.optional-dependencies]
+weave = ["weave>=0.51"]
+dev = ["pytest>=8,<10", "ruff>=0.6"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["witness_evals*"]
+
+[tool.pytest.ini_options]
+pythonpath = [".", "../services/vision", "../packages/contracts"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["B905"]
