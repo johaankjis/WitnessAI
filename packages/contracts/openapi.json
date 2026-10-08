@@ -1,0 +1,609 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Witness TASK-001",
+    "description": "Synthetic mock analysis only; human review required.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/incidents/{incident_id}": {
+      "get": {
+        "summary": "Get Incident",
+        "operationId": "get_incident_incidents__incident_id__get",
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Incident"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/incidents/{incident_id}/analyze": {
+      "post": {
+        "summary": "Analyze",
+        "operationId": "analyze_incidents__incident_id__analyze_post",
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/incidents/{incident_id}/results": {
+      "get": {
+        "summary": "Results",
+        "operationId": "results_incidents__incident_id__results_get",
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentReport"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnalysisStatus": {
+        "properties": {
+          "incident_id": {
+            "type": "string",
+            "title": "Incident Id"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "running",
+              "completed",
+              "failed"
+            ],
+            "title": "State"
+          },
+          "is_mock": {
+            "type": "boolean",
+            "title": "Is Mock"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "incident_id",
+          "state",
+          "is_mock",
+          "detail"
+        ],
+        "title": "AnalysisStatus"
+      },
+      "AtomicClaim": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "statement_id": {
+            "type": "string",
+            "title": "Statement Id"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Text"
+          },
+          "subject": {
+            "type": "string",
+            "title": "Subject"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "lane_change",
+              "braking",
+              "traffic_signal",
+              "other"
+            ],
+            "title": "Category"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "statement_id",
+          "text",
+          "subject",
+          "category"
+        ],
+        "title": "AtomicClaim"
+      },
+      "ClaimVerdict": {
+        "properties": {
+          "claim_id": {
+            "type": "string",
+            "title": "Claim Id"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/Verdict"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceWindow"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Evidence"
+          },
+          "explanation": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Explanation"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "uncertainty": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Uncertainty"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "claim_id",
+          "verdict",
+          "evidence",
+          "explanation",
+          "provenance",
+          "uncertainty"
+        ],
+        "title": "ClaimVerdict"
+      },
+      "DetectorObservation": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "claim_id": {
+            "type": "string",
+            "title": "Claim Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/EvidenceWindow"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "claim_id",
+          "label",
+          "evidence",
+          "provenance"
+        ],
+        "title": "DetectorObservation"
+      },
+      "DriverStatement": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id"
+          },
+          "driver_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Driver Id"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "driver_id",
+          "text"
+        ],
+        "title": "DriverStatement"
+      },
+      "EvidenceWindow": {
+        "properties": {
+          "video_uri": {
+            "type": "string",
+            "title": "Video Uri"
+          },
+          "start_seconds": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Start Seconds"
+          },
+          "end_seconds": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "End Seconds"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "visible",
+              "not_visible"
+            ],
+            "title": "Visibility"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Description"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "video_uri",
+          "start_seconds",
+          "end_seconds",
+          "visibility",
+          "description",
+          "provenance"
+        ],
+        "title": "EvidenceWindow"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Incident": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "video_uri": {
+            "type": "string",
+            "title": "Video Uri"
+          },
+          "duration_seconds": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Duration Seconds"
+          },
+          "statements": {
+            "items": {
+              "$ref": "#/components/schemas/DriverStatement"
+            },
+            "type": "array",
+            "minItems": 2,
+            "title": "Statements"
+          },
+          "is_mock": {
+            "type": "boolean",
+            "title": "Is Mock"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "video_uri",
+          "duration_seconds",
+          "statements",
+          "is_mock"
+        ],
+        "title": "Incident"
+      },
+      "IncidentReport": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "1.0",
+            "title": "Schema Version",
+            "default": "1.0"
+          },
+          "incident_id": {
+            "type": "string",
+            "title": "Incident Id"
+          },
+          "is_mock": {
+            "type": "boolean",
+            "title": "Is Mock"
+          },
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/AtomicClaim"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Claims"
+          },
+          "verdicts": {
+            "items": {
+              "$ref": "#/components/schemas/ClaimVerdict"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Verdicts"
+          },
+          "observations": {
+            "items": {
+              "$ref": "#/components/schemas/DetectorObservation"
+            },
+            "type": "array",
+            "title": "Observations"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "human_review_required": {
+            "type": "boolean",
+            "const": true,
+            "title": "Human Review Required",
+            "default": true
+          },
+          "legal_fault_determination": {
+            "type": "string",
+            "const": "not_provided",
+            "title": "Legal Fault Determination",
+            "default": "not_provided"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "incident_id",
+          "is_mock",
+          "claims",
+          "verdicts",
+          "observations",
+          "summary"
+        ],
+        "title": "IncidentReport"
+      },
+      "Provenance": {
+        "properties": {
+          "adapter": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Adapter"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Version"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Source"
+          },
+          "is_mock": {
+            "type": "boolean",
+            "title": "Is Mock"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "adapter",
+          "version",
+          "source",
+          "is_mock"
+        ],
+        "title": "Provenance"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "Verdict": {
+        "type": "string",
+        "enum": [
+          "supported",
+          "contradicted",
+          "not_visible"
+        ],
+        "title": "Verdict"
+      }
+    }
+  }
+}

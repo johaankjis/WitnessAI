@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+.env
+node_modules/
+.next/
+data/local/
+.DS_Store
+*.tsbuildinfo

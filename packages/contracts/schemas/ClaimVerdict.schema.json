@@ -1,0 +1,145 @@
+{
+  "$defs": {
+    "EvidenceWindow": {
+      "additionalProperties": false,
+      "properties": {
+        "video_uri": {
+          "title": "Video Uri",
+          "type": "string"
+        },
+        "start_seconds": {
+          "minimum": 0,
+          "title": "Start Seconds",
+          "type": "number"
+        },
+        "end_seconds": {
+          "exclusiveMinimum": 0,
+          "title": "End Seconds",
+          "type": "number"
+        },
+        "visibility": {
+          "enum": [
+            "visible",
+            "not_visible"
+          ],
+          "title": "Visibility",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        }
+      },
+      "required": [
+        "video_uri",
+        "start_seconds",
+        "end_seconds",
+        "visibility",
+        "description",
+        "provenance"
+      ],
+      "title": "EvidenceWindow",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter": {
+          "minLength": 1,
+          "title": "Adapter",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        },
+        "is_mock": {
+          "title": "Is Mock",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "adapter",
+        "version",
+        "source",
+        "is_mock"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "Verdict": {
+      "enum": [
+        "supported",
+        "contradicted",
+        "not_visible"
+      ],
+      "title": "Verdict",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "claim_id": {
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "verdict": {
+      "$ref": "#/$defs/Verdict"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/EvidenceWindow"
+      },
+      "minItems": 1,
+      "title": "Evidence",
+      "type": "array"
+    },
+    "explanation": {
+      "minLength": 1,
+      "title": "Explanation",
+      "type": "string"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Confidence"
+    },
+    "uncertainty": {
+      "minLength": 1,
+      "title": "Uncertainty",
+      "type": "string"
+    }
+  },
+  "required": [
+    "claim_id",
+    "verdict",
+    "evidence",
+    "explanation",
+    "provenance",
+    "uncertainty"
+  ],
+  "title": "ClaimVerdict",
+  "type": "object"
+}

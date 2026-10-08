@@ -1,0 +1,74 @@
+{
+  "$defs": {
+    "DriverStatement": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "driver_id": {
+          "minLength": 1,
+          "title": "Driver Id",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "driver_id",
+        "text"
+      ],
+      "title": "DriverStatement",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "title": "Id",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "video_uri": {
+      "title": "Video Uri",
+      "type": "string"
+    },
+    "duration_seconds": {
+      "exclusiveMinimum": 0,
+      "title": "Duration Seconds",
+      "type": "number"
+    },
+    "statements": {
+      "items": {
+        "$ref": "#/$defs/DriverStatement"
+      },
+      "minItems": 2,
+      "title": "Statements",
+      "type": "array"
+    },
+    "is_mock": {
+      "title": "Is Mock",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "video_uri",
+    "duration_seconds",
+    "statements",
+    "is_mock"
+  ],
+  "title": "Incident",
+  "type": "object"
+}
