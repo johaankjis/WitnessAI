@@ -1,0 +1,8 @@
+[
+  {"id": "c1", "statement_id": "statement-a", "text": "The van on my left moved over into my lane.", "subject": "driver-b", "category": "lane_change"},
+  {"id": "c2", "statement_id": "statement-a", "text": "I braked as soon as it came over.", "subject": "driver-a", "category": "braking"},
+  {"id": "c3", "statement_id": "statement-a", "text": "The light turned green.", "subject": "driver-a", "category": "traffic_signal"},
+  {"id": "c4", "statement_id": "statement-b", "text": "I stayed in my lane after the light changed.", "subject": "driver-b", "category": "lane_change"},
+  {"id": "c5", "statement_id": "statement-b", "text": "My light was green.", "subject": "driver-b", "category": "traffic_signal"},
+  {"id": "c6", "statement_id": "statement-b", "text": "The car behind me sped up.", "subject": "driver-a", "category": "other"}
+]

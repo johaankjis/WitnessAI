@@ -1,0 +1,19 @@
+{
+  "id": "nexar-00000",
+  "title": "Nexar clip 00000: night intersection, van beside dashcam car (sample statements for testing)",
+  "video_uri": "train/positive/00000.mp4",
+  "duration_seconds": 40.069204,
+  "is_mock": false,
+  "statements": [
+    {
+      "id": "statement-a",
+      "driver_id": "driver-a",
+      "text": "I was stopped at the red light in the right lane. When the light turned green I moved straight ahead in my lane. The van on my left moved over into my lane and hit the front of my car. I braked as soon as it came over."
+    },
+    {
+      "id": "statement-b",
+      "driver_id": "driver-b",
+      "text": "I was in the left lane and stayed in my lane after the light changed. The car behind me sped up and ran into the side of my van. My light was green."
+    }
+  ]
+}

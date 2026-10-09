@@ -1,4 +1,4 @@
-# Vision engine (TASK-002A) — Claude Code ownership
+# Vision engine (TASK-002A, TASK-004A) — Claude Code ownership
 
 Frame sampling, vehicle/traffic-light detection, IoU tracking and detector measurements,
 mapped onto the shared `DetectorObservation` contract through the TASK-001
@@ -17,7 +17,8 @@ mock  ─▶ SyntheticFrameSource ─▶ ScriptedDetector ┘   (same tracker, m
 | `measurements.py` | Event localization (box log-area growth), lateral shift, scale change, conservative HSV signal colour |
 | `observations.py` | Contract mapping and evidence-boundary rules |
 | `adapter.py` | `VisionObserver` (real footage) and `MockVisionObserver` (synthetic) |
-| `annotate.py` | Event clip extraction and annotated evidence clips |
+| `annotate.py` | Raw event clip extraction; annotated videos (boxes, track IDs, scores, frame/time stamps) of sampled frames |
+| `export.py` | Per-detection export (frame index, timestamp, track ID, class, score, box) as JSON with provenance, or CSV |
 | `mock.py` | Scripted synthetic scenes; `demo_lane_change_scene` matches demo-001 |
 | `tracing.py` | Optional W&B Weave tracing |
 
@@ -67,7 +68,7 @@ Warnings are prefixed onto real-observation descriptions. Errors propagate; the 
 turns them into HTTP 500 and keeps the previous report.
 
 ## Install and runtime requirements
-Python ≥ 3.11 (tested on 3.14.6). From the repository root:
+Python ≥ 3.11 (tested on 3.14.7 with torch 2.14.1, ultralytics 8.4.174, OpenCV 5.0.0). From the repository root:
 
 ```sh
 python -m pip install -e . -e 'services/vision[dev]'            # mock mode: pydantic only
@@ -115,16 +116,49 @@ pytest `testpaths`. The root `pythonpath` already covers `packages/contracts` an
 
 ## CLI and examples
 ```sh
-python -m witness_vision analyze clip.mp4 --clip-out out/event.mp4     # needs [yolo]
-python -m witness_vision export-examples                              # regenerate examples/
+# real YOLO on a local clip (needs [yolo] and weights; WITNESS_YOLO_WEIGHTS or --weights)
+python -m witness_vision analyze clip.mp4 --out out/analysis.json \
+    --detections-out out/detections.json --detections-csv out/detections.csv \
+    --video-out out/annotated.mp4 --clip-out out/event.mp4 [--sample-fps 5] [--device cpu|mps|cuda:0]
+# real VisionObserver on an Incident JSON (is_mock=false) with hand-written or extracted claims
+python -m witness_vision observe --incident data/real/nexar-00000.json \
+    --claims data/real/nexar-00000.claims.json --media-root data/local/nexar \
+    --out out/observations.json --analysis-out out/analysis.json --clip-dir out/clips
+python -m witness_vision export-examples                              # regenerate examples/ (mock only)
 ```
+`--detections-out` writes `witness-vision/detections@1`: provenance (adapter, detector, weights
+name and sha256, video URI and sha256, source/sample fps, device, thresholds), the video metadata,
+track summaries, the event estimate and one row per detection
+(`frame_index, timestamp_seconds, track_id, label, confidence, x1, y1, x2, y2`). Rows cover
+sampled frames only; detections from tracks shorter than `min_track_hits` were discarded as
+noise and are absent. `--video-out` writes every sampled frame at the sample rate with the boxes
+detected on that exact frame (H.264 `avc1` when the OpenCV build can encode it, else `mp4v`);
+run with `--sample-fps` equal to the source rate for a full-rate overlay. Neither artifact is a
+verdict; both carry a human-review notice.
+
 `examples/` holds the deterministic mock output for demo-001: claims, observations
 (`DetectorObservation[]`) and the full internal analysis. They are synthetic and a test asserts
-they match the current mock exactly.
+they match the current mock exactly. Real outputs are never committed (see `data/real/README.md`).
+
+## Real footage (TASK-004A)
+The first real run, on Nexar clip `00000.mp4`, is documented with exact commands, timings and
+measured results in [`docs/TASK-004A.md`](../../docs/TASK-004A.md). Headline: YOLO11n detects and
+tracks vehicles and lights on the clip; the box-growth event localizer missed the labeled
+`time_of_event` by +11.0 s on that one clip because the involved van is detected as `bus`/`truck`
+(fragmenting its track), fills ~30% of the frame, is clipped at the left edge and is not detected
+at all after 20.3 s. One clip is not an accuracy figure; no threshold was tuned to it.
 
 ## Tests and lint
 ```sh
 cd services/vision && python -m pytest && ruff check .
 ```
-31 tests; video-path tests skip automatically without OpenCV. No test downloads weights or
+43 tests; video-path tests skip automatically without OpenCV. No test downloads weights or
 touches the network (YOLO is exercised through an injected fake model and a pixel detector).
+`tests/test_real_video.py` adds opt-in checks on the real Nexar clip: they run only when the clip
+is under `WITNESS_MEDIA_ROOT` (default `data/local/nexar`) and, for inference, when
+`WITNESS_YOLO_WEIGHTS` names a local weights file. They verify real detections and tracks,
+contract-valid observations with `is_mock=false`, and the API media route serving the exact bytes:
+
+```sh
+WITNESS_YOLO_WEIGHTS=$PWD/data/local/models/yolo11n.pt python -m pytest services/vision/tests/test_real_video.py
+```

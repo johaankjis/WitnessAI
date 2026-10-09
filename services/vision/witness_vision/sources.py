@@ -82,7 +82,7 @@ class OpenCVFrameSource:
             self._cap.release()
             raise UnsupportedVideoError(f"invalid or unknown frame rate ({fps}) in {path.name}")
         self._meta = VideoMeta(
-            uri=uri or path.as_uri(), fps=fps,
+            uri=uri or path.resolve().as_uri(), fps=fps,
             frame_count=max(0, int(self._cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)),
             width=int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 0),
             height=int(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0))
