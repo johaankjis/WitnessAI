@@ -5,6 +5,11 @@ from .pipeline import Pipeline
 from .jobs import AnalysisRunner
 
 
+def cosmos_api_key() -> str:
+    """Explicit Cosmos credentials take precedence over the NVIDIA environment alias."""
+    return os.getenv('COSMOS_API_KEY', '').strip() or os.getenv('NVIDIA_API_KEY', '').strip()
+
+
 def configured_pipeline(mode: str) -> AnalysisRunner:
     if mode == 'mock':
         mock = MockAdapters()
@@ -27,7 +32,7 @@ def configured_pipeline(mode: str) -> AnalysisRunner:
         required('WANDB_INFERENCE_MODEL'), required('WANDB_API_KEY'),
         project=os.getenv('WANDB_INFERENCE_PROJECT', ''), **options)
     cosmos = ChatTransport('cosmos', required('COSMOS_BASE_URL'),
-        os.getenv('COSMOS_MODEL', 'nvidia/Cosmos-Reason2-8B'), os.getenv('COSMOS_API_KEY', ''), **options)
+        os.getenv('COSMOS_MODEL', 'nvidia/Cosmos-Reason2-8B'), cosmos_api_key(), **options)
     from witness_vision.adapter import VisionObserver
     from witness_vision.detectors import UltralyticsDetector
     weights = Path(required('WITNESS_YOLO_WEIGHTS')).resolve()
