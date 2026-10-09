@@ -89,3 +89,38 @@ def test_plan_rejects_incompatible_app(failure):
         spec['containers'][0]['name'] = 'other'
     with pytest.raises(ValueError):
         plan(ROOT, deployment, service, ingress, 'app', 'source', 'vss-secret')
+
+
+@pytest.mark.parametrize('old_url', [
+    {'value': 'https://stale.example'},
+    {'valueFrom': {'secretKeyRef': {'name': 'old', 'key': 'VSS_URL'}}},
+])
+def test_plan_pins_internal_url_over_stale_configuration(old_url):
+    from config import INTERNAL_VSS_URL
+    deployment, service, ingress = app_objects()
+    container = deployment['spec']['template']['spec']['containers'][0]
+    container['env'] = [{'name': 'VSS_URL', **old_url},
+                        {'name': 'WITNESS_WORKSHOP_MODE', 'value': 'fixture'}]
+    container['envFrom'] = [{'secretRef': {'name': 'old'}}]
+    _, result = plan(ROOT, deployment, service, ingress, 'app', 'source', 'vss-secret')
+    env = result['spec']['template']['spec']['containers'][0]['env']
+    assert [e for e in env if e['name'] == 'VSS_URL'] == [
+        {'name': 'VSS_URL', 'value': INTERNAL_VSS_URL}]
+    assert next(e for e in env if e['name'] == 'WITNESS_WORKSHOP_MODE')['value'] == 'vast'
+    template = json.loads((ROOT / 'deployment-env.json').read_text())['env']
+    assert next(e for e in template if e['name'] == 'VSS_URL')['value'] == INTERNAL_VSS_URL
+    for key in ['VSS_USERNAME', 'VSS_PASSWORD']:
+        assert next(e for e in env if e['name'] == key)['valueFrom']['secretKeyRef']['key'] == key
+
+
+def test_vm_preflight_rejects_stale_url_offline(monkeypatch, capsys):
+    import release
+    monkeypatch.setenv('WITNESS_WORKSHOP_MODE', 'vast')
+    monkeypatch.setenv('VSS_URL', 'https://stale.example')
+    monkeypatch.setenv('VSS_USERNAME', 'test-user')
+    monkeypatch.setenv('VSS_PASSWORD', 'test-password')
+    monkeypatch.setattr('sys.argv', ['release.py', 'preflight', '--vm'])
+    with pytest.raises(SystemExit) as exc:
+        release.main()
+    assert exc.value.code == 1
+    assert 'internal VSS service URL' in capsys.readouterr().err

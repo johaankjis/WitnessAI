@@ -240,6 +240,34 @@ def prefer_incident_hit(results: list[dict[str, Any]], source: str) -> dict[str,
     return None
 
 
+def validate_detection_provenance(
+    det: dict[str, Any], metadata: dict[str, Any], *, source: str,
+    legacy_source: str, expected_sidecar: str,
+) -> None:
+    """Validate footage independently of the detector identifier; never rewrite inputs.
+
+    Caller must first validate the metadata's exact source and timestamps.
+    The legacy exception is restricted to one explicitly published source pair.
+    """
+    if not isinstance(det, dict) or det.get("source") != "yolo11_coco":
+        raise ValueError("Unexpected detection identifier")
+    if det.get("synthetic", False):
+        raise ValueError("Detection evidence mode mismatch")
+    if metadata.get("source") != source:
+        raise ValueError("Metadata source mismatch")
+    if det.get("segment_source") not in (source, legacy_source):
+        raise ValueError("Detection segment source mismatch")
+    anchor_sidecar = metadata.get("detection_sidecar_uri")
+    if anchor_sidecar != expected_sidecar:
+        raise ValueError("Detection sidecar mismatch")
+    # Some responses echo the sidecar URI. If present it must agree exactly.
+    if "detection_sidecar_uri" in det and det["detection_sidecar_uri"] != anchor_sidecar:
+        raise ValueError("Detection sidecar mismatch")
+    counts = (metadata.get("detection_count"), det.get("detection_count"))
+    if any(type(count) is not int or count < 0 for count in counts) or counts[0] != counts[1]:
+        raise ValueError("Detection count mismatch")
+
+
 def summarize_detections(det: dict[str, Any] | None) -> dict[str, Any]:
     if not det:
         return {
@@ -255,6 +283,9 @@ def summarize_detections(det: dict[str, Any] | None) -> dict[str, Any]:
     return {
         "synthetic": bool(det.get("synthetic", False)),
         "available": True,
+        "source": det.get("source"),
+        "segment_source": det.get("segment_source"),
+        "detection_sidecar_uri": det.get("detection_sidecar_uri"),
         "detection_count": det.get("detection_count"),
         "object_classes": det.get("object_classes"),
         "object_counts": det.get("object_counts"),
@@ -303,6 +334,7 @@ def public_evidence_row(row: dict[str, Any] | None, *, source_fallback: str) -> 
         "object_counts": row.get("object_counts"),
         "detection_count": row.get("detection_count"),
         "cosmos_model": row.get("cosmos_model"),
+        "detection_sidecar_uri": row.get("detection_sidecar_uri"),
         "provenance": {
             "reasoning_source": "SYNTHETIC FIXTURE" if row.get("synthetic") else "Cosmos Reasoner (reasoning_content from VastDB / search)",
             "objects_source": "SYNTHETIC FIXTURE" if row.get("synthetic") else "YOLO fields on segment row (may differ from detections sidecar)",

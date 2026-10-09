@@ -4,6 +4,9 @@ import os
 from urllib.parse import urlsplit
 
 
+INTERNAL_VSS_URL = "http://video-backend-service.team-6.svc.cluster.local:8000"
+
+
 def mode() -> str:
     value = os.getenv("WITNESS_WORKSHOP_MODE", "fixture")
     if value not in {"fixture", "vast"}:

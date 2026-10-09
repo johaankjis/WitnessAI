@@ -45,6 +45,7 @@ def _anchor_meta():
         "object_classes": "car,person,traffic light,truck,bus",
         "object_counts": {"car": 6, "person": 11, "traffic light": 6},
         "detection_count": 100,
+        "detection_sidecar_uri": INCIDENT["detection_sidecar_uri"],
     }
 
 
@@ -98,7 +99,9 @@ def test_review_happy_path_and_timestamps(client):
         main.vss, "segment_metadata", return_value=meta
     ), patch.object(
         main.vss, "segment_detections", return_value={
-            "detection_count": 50,
+            "source": "yolo11_coco",
+            "segment_source": INCIDENT["source"],
+            "detection_count": 100,
             "object_classes": ["car", "person"],
             "object_counts": {"car": 2, "person": 3},
             "fps": 30,
@@ -161,3 +164,74 @@ def test_media_proxy_uses_server_token(client):
         # Ensure client request did not need to pass a token query param
         assert "token" not in str(r.request.url).lower()
         upstream.close.assert_called_once()
+
+
+def detection_pair(legacy=True):
+    meta = _anchor_meta() | {
+        'detection_sidecar_uri': INCIDENT['detection_sidecar_uri'], 'detection_count': 2380}
+    det = {'source': 'yolo11_coco',
+           'segment_source': INCIDENT['legacy_detection_source'] if legacy else INCIDENT['source'],
+           'detection_count': 2380, 'frames': []}
+    return meta, det
+
+
+@pytest.mark.parametrize('echo_sidecar', [False, True])
+@pytest.mark.parametrize('legacy', [False, True])
+def test_yolo_review_preserves_provenance_without_anchor_sidecar_nameerror(client, monkeypatch, legacy, echo_sidecar):
+    from copy import deepcopy
+    meta, det = detection_pair(legacy)
+    if echo_sidecar:
+        det["detection_sidecar_uri"] = meta["detection_sidecar_uri"]
+    original_meta = deepcopy(meta)
+    original = deepcopy(det)
+    monkeypatch.setattr(main.vss, 'segment_metadata', lambda source: meta)
+    monkeypatch.setattr(main.vss, 'segment_detections', lambda source: det)
+    monkeypatch.setattr(main.vss, 'search', lambda *a, **k: {'results': [meta]})
+    response = client.get('/api/review')
+    assert response.status_code == 200
+    body = response.json()
+    assert body['mode'] == 'vast' and body['synthetic'] is False
+    assert len(body['claim_reviews']) == len(body['timeline']) == 6
+    assert body['anchor']['detections']['source'] == 'yolo11_coco'
+    assert body['anchor']['detections']['segment_source'] == original['segment_source']
+    assert body['anchor']['metadata']['detection_sidecar_uri'] == meta['detection_sidecar_uri']
+    assert det == original
+    assert meta == original_meta
+    assert body['wandb']['active'] is False
+
+
+@pytest.mark.parametrize('target,field,value', [
+    ('det', 'source', 'other_detector'),
+    ('det', 'source', None),
+    ('det', 'segment_source', None),
+    ('det', 'segment_source', 's3://unrelated/video.mp4'),
+    ('det', 'segment_source', INCIDENT['source'].replace('team-6', 'team-7')),
+    ('det', 'segment_source', INCIDENT['source'].replace('0017', '0018')),
+    ('det', 'segment_source', INCIDENT['source'] + '?signed=no'),
+    ('det', 'segment_source', INCIDENT['legacy_detection_source'].replace('0017', '0018')),
+    ('det', 'segment_source', INCIDENT['legacy_detection_source'].replace('/segments/', '/other/')),
+    ('meta', 'detection_sidecar_uri', INCIDENT['detection_sidecar_uri'].replace('team-6', 'team-a')),
+    ('meta', 'detection_sidecar_uri', INCIDENT['detection_sidecar_uri'].replace('0017', '0018')),
+    ('det', 'detection_count', 2379),
+    ('det', 'detection_count', '2380'),
+    ('det', 'detection_count', True),
+    ('det', 'detection_count', None),
+    ('det', 'detection_sidecar_uri', 's3://other/sidecar.json'),
+    ('det', 'synthetic', True),
+    ('meta', 'source', INCIDENT['source'].replace('team-6', 'team-a')),
+    ('meta', 'segment_start_sec', 24),
+    ('meta', 'segment_end_sec', 31),
+    ('meta', 'detection_sidecar_uri', None),
+    ('meta', 'detection_sidecar_uri', 's3://other/sidecar.json'),
+    ('meta', 'detection_count', 2379),
+    ('meta', 'detection_count', None),
+    ('meta', 'detection_count', True),
+    ('det', 'detection_count', -1),
+    ('det', 'detection_count', 2380.0),
+])
+def test_detection_provenance_rejected(client, monkeypatch, target, field, value):
+    meta, det = detection_pair()
+    (meta if target == 'meta' else det)[field] = value
+    monkeypatch.setattr(main.vss, 'segment_metadata', lambda source: meta)
+    monkeypatch.setattr(main.vss, 'segment_detections', lambda source: det)
+    assert client.get('/api/review').status_code == 502

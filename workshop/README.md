@@ -87,3 +87,17 @@ footage, weights, virtual environments and node_modules. It cannot prove that a
 human has not pasted secrets into source: review staged changes before release.
 The VM plan uses an immutable, content-named ConfigMap for reliable rollback.
 See [TASK-005C results](TASK-005C.md) and [deployment and rollback](DEPLOYMENT.md).
+
+## TASK-006B provenance synchronization
+
+YOLO `source` identifies the detector (`yolo11_coco`); `segment_source` identifies
+footage. Metadata still requires the exact Team 6 source and 25–30 second window.
+Detection validation requires the expected Team 6 sidecar URI and equal integer
+metadata/detection counts. Only the fixed segment's explicitly allowed legacy
+Team A URI is compatible; other buckets, filenames and paths fail with HTTP 502.
+Original detector, segment and metadata sidecar identifiers remain in the review
+response for auditing. An absent sidecar remains unavailable evidence, never a
+negative observation. W&B inference remains inactive; human review is required.
+
+Deployment plans pin the internal VSS service URL and `vast` mode, with username
+and password in Kubernetes Secrets. See [TASK-006B](TASK-006B.md).

@@ -1,6 +1,7 @@
 # Team 6 transfer, preflight, deployment and rollback
 
-No deployment is performed by TASK-005C or by `release.py`. Run Mac steps locally;
+TASK-006B is local-only: do not execute the VM steps for this task.
+No deployment is performed by TASK-006B or by `release.py`. Run Mac steps locally;
 all `kubectl`, credentials, VSS readiness and real evidence checks below are VM-only.
 The workshop's `deployment/deploy-app-no-registry` implementation is not present in
 this repository. This procedure updates an **existing** compatible Team 6 app using
@@ -76,7 +77,7 @@ release does not install packages into a read-only source mount or select a new 
 
 ## 3. VM configuration and offline preflight
 
-Use an existing Kubernetes Secret with keys `VSS_URL`, `VSS_USERNAME`, `VSS_PASSWORD`,
+Use an existing Kubernetes Secret with keys `VSS_USERNAME`, `VSS_PASSWORD`,
 or create one from a protected VM-local env file provided by the team operator. Do
 not use literal credentials in CLI arguments or commit the file. Example creation:
 
@@ -86,7 +87,7 @@ read -r -p 'Secret name for this release: ' VSS_SECRET
 kubectl -n team-6 create secret generic "$VSS_SECRET" --from-env-file="$VSS_ENV_FILE"
 # The file must contain plain KEY=value lines (not shell code).
 # Enter the same values for syntax-only preflight; read -s avoids terminal echo.
-read -r -s -p 'VSS URL: ' VSS_URL; printf '\n'
+VSS_URL=http://video-backend-service.team-6.svc.cluster.local:8000
 read -r -s -p 'VSS username: ' VSS_USERNAME; printf '\n'
 read -r -s -p 'VSS password: ' VSS_PASSWORD; printf '\n'
 export VSS_URL VSS_USERNAME VSS_PASSWORD
@@ -146,3 +147,13 @@ pruned, restore the saved deployment specification using the operator's approved
 restore process with `before-deployment.json`; do not overwrite a newer concurrent
 release. Recheck the App tab and health. Keep failed release artifacts VM-local for
 inspection. Do not delete prior ConfigMaps/Secrets until rollback retention ends.
+
+## Internal service configuration
+
+`deployment-env.json` documents the generated container environment. Replace its
+Secret name with the existing credential Secret. The planner pins `VSS_URL` to
+`http://video-backend-service.team-6.svc.cluster.local:8000` as a literal non-secret
+value, overriding old literal values and Secret references. A stale `VSS_URL` key
+in a Secret cannot override this explicit environment entry. VM preflight rejects
+other URLs. Credentials remain Secret references; mode is explicitly `vast` and
+missing credentials fail startup. Fixture mode remains an explicit local option.

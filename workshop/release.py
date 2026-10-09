@@ -11,12 +11,12 @@ import re
 import sys
 import tarfile
 
-from config import mode, vast_settings
+from config import INTERNAL_VSS_URL, mode, vast_settings
 
 ROOT = Path(__file__).resolve().parent
 RUNTIME = ('main.py', 'config.py', 'fixtures.py', 'vss_client.py', 'verdicts.py',
            'incident.py', 'wandb_adapter.py', 'index.html', 'app.js', 'styles.css', 'requirements.txt')
-EXTRAS = ('release.py', 'README.md', 'DEPLOYMENT.md', 'TASK-005C.md', 'start-mac.sh')
+EXTRAS = ('release.py', 'README.md', 'DEPLOYMENT.md', 'TASK-005C.md', 'TASK-006B.md', 'deployment-env.json', 'start-mac.sh')
 # Leave substantial room below Kubernetes' 1 MiB ConfigMap limit.
 MAX_CONFIGMAP = 750_000
 MAX_PACKAGE = 900_000
@@ -130,9 +130,10 @@ def plan(root: Path, deployment: dict, service: dict, ingress: dict,
     env = [e for e in container.get('env', []) if e['name'] not in
            {'WITNESS_WORKSHOP_MODE', 'VSS_URL', 'VSS_USERNAME', 'VSS_PASSWORD', 'PORT', 'HOST'}]
     env += [{'name': k, 'value': v} for k, v in
-            {'WITNESS_WORKSHOP_MODE': 'vast', 'HOST': '0.0.0.0', 'PORT': '8080'}.items()]
+            {'WITNESS_WORKSHOP_MODE': 'vast', 'HOST': '0.0.0.0', 'PORT': '8080',
+             'VSS_URL': INTERNAL_VSS_URL}.items()]
     env += [{'name': k, 'valueFrom': {'secretKeyRef': {'name': secret, 'key': k}}}
-            for k in ['VSS_URL', 'VSS_USERNAME', 'VSS_PASSWORD']]
+            for k in ['VSS_USERNAME', 'VSS_PASSWORD']]
     container['env'] = env
     # Do not serialize live metadata/status or any old literal secret values.
     result = {'apiVersion': 'apps/v1', 'kind': 'Deployment',
@@ -166,7 +167,9 @@ def main() -> None:
             if args.vm:
                 if mode() != 'vast':
                     raise ValueError('VM requires WITNESS_WORKSHOP_MODE=vast')
-                vast_settings()  # presence + syntax only; no network
+                url, _, _, _ = vast_settings()  # presence + syntax only; no network
+                if url != INTERNAL_VSS_URL:
+                    raise ValueError("VM requires the Team 6 internal VSS service URL")
                 if not all([args.deployment, args.service, args.ingress, args.container, args.volume, args.secret]):
                     raise ValueError('VM preflight requires deployment/service/ingress JSON, container, volume, secret')
                 cm, deploy = plan(ROOT, json.loads(args.deployment.read_text()),

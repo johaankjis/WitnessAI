@@ -28,6 +28,7 @@ from vss_client import (
     prefer_incident_hit,
     public_evidence_row,
     summarize_detections,
+    validate_detection_provenance,
 )
 from wandb_adapter import WandBInferenceAdapter
 
@@ -101,8 +102,18 @@ def _anchor_segment() -> dict[str, Any]:
     except (VSSAPIError, VSSAuthError):
         detection_error = "Detections unavailable; not treated as negative evidence"
         det = None
-    if det:
-        validate_evidence({**det, "source": det.get("source", source)})
+    if det is not None:
+        if MODE == "fixture":
+            validate_evidence(det)
+        else:
+            try:
+                validate_detection_provenance(
+                    det, meta, source=source,
+                    legacy_source=INCIDENT["legacy_detection_source"],
+                    expected_sidecar=INCIDENT["detection_sidecar_uri"],
+                )
+            except ValueError as exc:
+                raise HTTPException(502, str(exc)) from exc
     return {
         "metadata": public_evidence_row(meta, source_fallback=source),
         "detections": {**summarize_detections(det), "error": detection_error},

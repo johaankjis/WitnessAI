@@ -35,6 +35,15 @@ INCIDENT: dict[str, Any] = {
         "s3://team-6-vss-chunks-segments/segments/"
         "20261001_062538_set02_video_chunk_0017_segment_006_of_006.mp4"
     ),
+    # Exact observed compatibility identifiers; never generalize bucket substitution.
+    "legacy_detection_source": (
+        "s3://team-a-vss-chunks-segments/segments/"
+        "20261001_062538_set02_video_chunk_0017_segment_006_of_006.mp4"
+    ),
+    "detection_sidecar_uri": (
+        "s3://team-6-vss-chunks-segments/detections/"
+        "20261001_062538_set02_video_chunk_0017_segment_006_of_006.json.gz"
+    ),
     "original_video": (
         "s3://team-6-vss-chunks/team-6/20261001_062538_set02_video_chunk_0017.mp4"
     ),
