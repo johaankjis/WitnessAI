@@ -36,9 +36,9 @@ describe("contract joins", () => {
 
   it("keeps detector observations separate from model evidence", () => {
     expect(observationsForClaim(FIXTURE_REPORT, "c1").map((o) => o.id)).toEqual([
-      "mock-observation-1",
+      "vision-c1-vehicle_lateral_image_shift-track1",
     ]);
-    expect(observationsForClaim(FIXTURE_REPORT, "c2")).toEqual([]);
+    expect(observationsForClaim(FIXTURE_REPORT, "c2")[0].evidence.visibility).toBe("not_visible");
   });
 
   it("exposes the primary evidence window for seeking", () => {

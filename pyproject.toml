@@ -5,12 +5,13 @@ build-backend = "setuptools.build_meta"
 name = "witness-foundation"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ["fastapi>=0.115,<1", "pydantic>=2.10,<3", "uvicorn>=0.30,<1"]
+dependencies = ["fastapi>=0.115,<1", "pydantic>=2.10,<3", "uvicorn>=0.30,<1", "httpx>=0.27,<1"]
 [project.optional-dependencies]
-dev = ["pytest>=8,<10", "httpx>=0.27,<1"]
+dev = ["pytest>=8,<10", "httpx>=0.27,<1", "numpy>=1.26", "opencv-python-headless>=4.9"]
+real = ["ultralytics>=8.3", "opencv-python-headless>=4.9", "numpy>=1.26"]
 [tool.setuptools.packages.find]
-where = ["apps/api", "packages/contracts"]
-include = ["witness_api*", "witness_contracts*"]
+where = ["apps/api", "packages/contracts", "services/vision", "evals"]
+include = ["witness_api*", "witness_contracts*", "witness_vision*", "witness_evals*"]
 [tool.pytest.ini_options]
-pythonpath = ["apps/api", "packages/contracts"]
-testpaths = ["apps/api/tests"]
+pythonpath = ["apps/api", "packages/contracts", "services/vision", "evals"]
+testpaths = ["apps/api/tests", "services/vision/tests", "evals/tests"]

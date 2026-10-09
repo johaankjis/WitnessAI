@@ -11,8 +11,11 @@ import VideoPlayer from "../../../components/VideoPlayer";
 import type { Incident, IncidentReport } from "../../../lib/contracts";
 import {
   ApiError,
+  mediaUrl,
+  waitForAnalysis,
   analyzeIncident,
   getIncident,
+  getAnalysisStatus,
   getResults,
   isNotAnalyzed,
   isNotFound,
@@ -133,6 +136,15 @@ export default function IncidentDashboard({ incidentId }: { incidentId: string }
       setLoadPhase("ready");
 
       try {
+        if (!loadedIncident.is_mock) {
+          const status = await getAnalysisStatus(incidentId);
+          if (cancelled) return;
+          setAnalysisPhase("analyzing");
+          await waitForAnalysis(incidentId, status, (current) => {
+            if (!cancelled) setAnalysisDetail(current.detail);
+          });
+          if (cancelled) return;
+        }
         const loadedReport = await getResults(incidentId);
         if (cancelled) return;
         setReport(loadedReport);
@@ -213,7 +225,7 @@ export default function IncidentDashboard({ incidentId }: { incidentId: string }
     setAnalysisDetail("Contacting the analysis backend…");
     try {
       const status = await analyzeIncident(incidentId);
-      setAnalysisDetail(status.detail);
+      await waitForAnalysis(incidentId, status, (current) => setAnalysisDetail(current.detail));
       const loadedReport = await getResults(incidentId);
       setReport(loadedReport);
       setAnalysisPhase("completed");
@@ -327,7 +339,7 @@ export default function IncidentDashboard({ incidentId }: { incidentId: string }
                 onClick={runAnalysis}
                 className="rounded-md bg-cyan-400 px-4 py-2 text-sm font-bold text-slate-950 hover:bg-cyan-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400"
               >
-                {analysisPhase === "completed" ? "Re-run analysis" : "Run analysis"}
+                {analysisPhase === "completed" ? "Run / check analysis" : "Run analysis"}
               </button>
             )}
           </div>
@@ -368,7 +380,7 @@ export default function IncidentDashboard({ incidentId }: { incidentId: string }
       <div className="grid gap-4 xl:grid-cols-12">
         <div className="flex flex-col gap-4 xl:col-span-7">
           <VideoPlayer
-            videoUri={incident.video_uri}
+            videoUri={incident.is_mock ? incident.video_uri : mediaUrl(incident.id)}
             durationSeconds={incident.duration_seconds}
             seekToSeconds={playhead.time}
             seekToken={playhead.token}

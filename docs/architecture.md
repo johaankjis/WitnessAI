@@ -1,31 +1,39 @@
-# TASK-001 architecture
-The project plan was read in full. Its provider-backed pipeline is represented here by
-replaceable interfaces; no integrations are activated. The requested safety boundary
-supersedes the plan's draft liability note: reports provide no legal fault determination.
+# TASK-003 architecture
 
-FastAPI → Pipeline → extractor → localizer → verifier → fusion → report generator.
-The observer supplies claim-linked detector observations to fusion. Storage loads the
-incident fixture and atomically writes validated reports using temporary files plus rename.
-The composition root wires all seven interfaces to local adapters. create_app accepts
-storage and pipeline overrides, enabling isolated tests and later adapter replacement.
+Composition root: `apps/api/witness_api/main.py`. `WITNESS_ANALYSIS_MODE` selects a single
+coherent configuration. Pydantic v2 models in `packages/contracts` remain the only evidence
+contract source; all v1 evidence models and endpoint payloads are unchanged.
 
-Pydantic models forbid unknown fields, bound confidence and timestamps, reject missing
-visible evidence for supported/contradicted verdicts, and check report claim references
-and mock provenance consistency. Pipeline validates statement references and evidence bounds.
-These structural checks cannot establish that real evidence is authentic: real adapters
-must inspect actual media, preserve source provenance and apply the evidence policy.
+Mock: FastAPI → synchronous Pipeline → deterministic claim extraction/localization/
+verification → Claude MockVisionObserver → pass-through fusion → deterministic report →
+atomic JSON storage. Vision runs scripted detections through its tracker and measurement
+code. Its observations never modify scripted claim judgments or constitute independent
+corroboration. Every source remains labeled synthetic.
 
-The mock fixture describes B changing lanes and A braking. Two drivers contradict each
-other about those actions. A green-signal claim is not_visible because the synthetic
-scenario places the signal outside frame. Timestamps 8–12 seconds are fixture data only;
-mock:// is deliberately not a playable URL. Null confidence avoids invented certainty.
+Real: FastAPI → bounded single-thread job runner → LocalMedia snapshot/probe → W&B
+extraction → VisionObserver → Cosmos localization/verification → pass-through fusion →
+W&B constrained report → atomic storage. Vision and Cosmos consume the same captured MP4
+bytes. The detector reads a temporary copy, which is removed afterward; its evidence URI
+is restored to the original incident URI and provenance includes the snapshot SHA-256.
+Cosmos provenance independently includes the same digest. Detector measurements remain
+separate from model judgments; neither is an automatic fault determination.
 
-POST is synchronous: completed means the report has been saved. No background task or
-status database exists. Pending/running/failed are reserved contract states. Failed POSTs
-return 500; previous reports remain available. Repeated runs replace the report with the
-same content. Local file storage is for single-machine development, with last-write-wins
-semantics; it is not a distributed job system. No authentication or production hosting is included.
+Provider operations and optional model libraries are not activated by mock mode. Real
+configuration requires existing local YOLO weights, preventing implicit weight downloads
+through the integration path. Missing runtime/media/provider output fails analysis rather
+than manufacturing successful evidence. Provider APIs remain unverified live.
 
-Future providers belong behind Protocol interfaces; none should be imported or contacted
-by default. Claude Code owns vision and evaluation; Muse owns frontend behavior. Shared
-contract changes require coordination with Codex. No TASK-002 features are implemented.
+The browser loads original footage from an incident-scoped API media route. URI resolution
+rejects remote sources, traversal and symlink escapes outside the configured root. It
+supports byte-range requests through FileResponse for browser seeking. Evidence retains
+the original URI; only the player's URL changes. The operator must keep local files
+immutable, as media serving reads the current original file, not persisted analysis bytes.
+
+Jobs have four outstanding slots, one worker and 128 retained incident statuses. GET status
+is read-only; repeated POST retains its earlier polling behavior. Terminal states are
+sticky until restart/eviction. Jobs are in memory and do not have a hard whole-job deadline;
+provider calls have finite retries/timeouts and media has size/duration limits. No durable
+queue or multi-worker support is claimed. Failed jobs retain previous reports. The UI waits
+for completion before fetching results, and distinguishes failures from saved reports.
+
+Human review is always required. No archive sweep or legal fault determination is added.

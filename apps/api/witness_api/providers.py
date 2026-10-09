@@ -1,11 +1,13 @@
 """Provider adapters with private schemas; public v1 contracts remain unchanged."""
 from typing import Annotated, Literal
+from witness_vision.adapter import VisionObserver
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 from witness_contracts import (AtomicClaim, EvidenceWindow, ClaimVerdict, IncidentReport, Provenance,
                                Incident, DetectorObservation)
 from .provider_io import ChatTransport, ProviderError
 from .media import VideoAsset, LocalMedia
 from .pipeline import Pipeline
+from .interfaces import YoloObserver
 
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=4000)]
 
@@ -181,11 +183,39 @@ class NoDetector:
 
 class RealPipeline:
     """Per-run media binding keeps concurrent jobs from mixing incident evidence."""
-    def __init__(self, wandb: WandbAdapter, cosmos: ChatTransport, media: LocalMedia):
+    def __init__(self, wandb: WandbAdapter, cosmos: ChatTransport, media: LocalMedia, observer: VisionObserver | None = None):
         self.wandb, self.cosmos, self.media = wandb, cosmos, media
+        self.observer = observer
 
     def analyze(self, incident: Incident) -> IncidentReport:
         asset = self.media.load(incident)
         cosmos = CosmosAdapter(self.cosmos, asset)
         none = NoDetector()
-        return Pipeline(self.wandb, cosmos, cosmos, none, none, self.wandb).analyze(incident)
+        # Bind the detector to the exact immutable bytes supplied to Cosmos.
+        observer: YoloObserver = none
+        if self.observer is not None:
+            observer = SnapshotObserver(self.observer, asset)
+        return Pipeline(self.wandb, cosmos, cosmos, observer, none, self.wandb).analyze(incident)
+
+
+class SnapshotObserver:
+    def __init__(self, observer: VisionObserver, asset: VideoAsset):
+        self.observer, self.asset = observer, asset
+
+    def observe(self, incident: Incident, claims: list[AtomicClaim]) -> list[DetectorObservation]:
+        import base64
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory(prefix='witness-vision-') as directory:
+            path = Path(directory) / 'source.mp4'
+            path.write_bytes(base64.b64decode(self.asset.data_url.split(',', 1)[1]))
+            bound = VisionObserver(detector=self.observer.detector, config=self.observer.config,
+                                   media_root=Path(directory))
+            observations = bound.observe(incident.model_copy(update={'video_uri': str(path)}), claims)
+        for observation in observations:
+            observation.evidence.video_uri = incident.video_uri
+            source = observation.provenance.source.replace(str(path), incident.video_uri)
+            source += f'; original video seconds; sha256={self.asset.sha256}'
+            observation.provenance = observation.provenance.model_copy(update={'source': source})
+            observation.evidence.provenance = observation.provenance.model_copy()
+        return observations

@@ -24,9 +24,7 @@ class LocalMedia:
     def __init__(self, root: Path, ffprobe: str = 'ffprobe', max_bytes: int = 25_000_000):
         self.root, self.ffprobe, self.max_bytes = root.resolve(), ffprobe, max_bytes
 
-    def load(self, incident: Incident) -> VideoAsset:
-        if incident.is_mock:
-            raise ProviderError('real providers cannot analyze synthetic incidents')
+    def resolve(self, incident: Incident) -> Path:
         uri = urlsplit(incident.video_uri)
         if uri.scheme not in ('', 'file') or uri.netloc or uri.query or uri.fragment:
             raise ProviderError('media: only local MP4 files under WITNESS_MEDIA_ROOT are supported')
@@ -34,6 +32,14 @@ class LocalMedia:
         path = (path if path.is_absolute() else self.root / path).resolve()
         if not path.is_relative_to(self.root) or path.suffix.lower() != '.mp4':
             raise ProviderError('media: file must be MP4 within WITNESS_MEDIA_ROOT')
+        if not path.is_file():
+            raise ProviderError("media: file unavailable")
+        return path
+
+    def load(self, incident: Incident) -> VideoAsset:
+        if incident.is_mock:
+            raise ProviderError('real providers cannot analyze synthetic incidents')
+        path = self.resolve(incident)
         try:
             with path.open('rb') as handle:
                 payload = handle.read(self.max_bytes + 1)

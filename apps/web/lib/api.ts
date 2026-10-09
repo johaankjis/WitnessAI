@@ -43,6 +43,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${apiBase()}${path}`, {
+      signal: AbortSignal.timeout(15000),
       ...init,
       headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
     });
@@ -77,8 +78,8 @@ export function getIncident(incidentId: string): Promise<Incident> {
 }
 
 /**
- * Runs analysis synchronously on the backend (POST returns when the report
- * has been saved). Callers should then fetch results.
+ * Mock runs complete synchronously; real runs return a bounded job status.
+ * Wait for completion before retrieving the current results.
  */
 export function analyzeIncident(incidentId: string): Promise<AnalysisStatus> {
   return request<AnalysisStatus>(`/incidents/${encodeURIComponent(incidentId)}/analyze`, {
@@ -88,4 +89,27 @@ export function analyzeIncident(incidentId: string): Promise<AnalysisStatus> {
 
 export function getResults(incidentId: string): Promise<IncidentReport> {
   return request<IncidentReport>(`/incidents/${encodeURIComponent(incidentId)}/results`);
+}
+
+export function getAnalysisStatus(incidentId: string): Promise<AnalysisStatus> {
+  return request<AnalysisStatus>(`/incidents/${encodeURIComponent(incidentId)}/status`);
+}
+
+export function mediaUrl(incidentId: string): string {
+  return `${apiBase()}/incidents/${encodeURIComponent(incidentId)}/media`;
+}
+
+export async function waitForAnalysis(
+  incidentId: string, initial: AnalysisStatus,
+  onStatus: (status: AnalysisStatus) => void,
+): Promise<AnalysisStatus> {
+  let status = initial;
+  for (let attempt = 0; attempt < 600; attempt++) {
+    onStatus(status);
+    if (status.state === "failed") throw new ApiError(500, status.detail);
+    if (status.state === "completed") return status;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    status = await getAnalysisStatus(incidentId);
+  }
+  throw new ApiError(408, "Analysis is still running. Check status again later; no new job was submitted.");
 }
