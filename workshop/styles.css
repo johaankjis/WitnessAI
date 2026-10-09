@@ -552,3 +552,6 @@ footer.notes strong { color: #ffd9a0; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+.live-analysis { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border, #ccc); }
+#live-results { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: .75rem; }

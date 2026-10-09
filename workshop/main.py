@@ -7,6 +7,7 @@ Credentials stay server-side via VSS_* env vars. Never embed tokens in HTML.
 from __future__ import annotations
 
 import logging
+import asyncio
 import requests
 import os
 from pathlib import Path
@@ -14,6 +15,8 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from pydantic import BaseModel, ConfigDict, Field
+from live_inference import GPUSettings, LiveError, RequestLimit, analyze, read_video
 from config import mode, vast_settings
 from fixtures import FixtureClient, LABEL, SOURCE, VIDEO
 from copy import deepcopy
@@ -80,6 +83,20 @@ async def ingress_prefix(request: Request, call_next):
     path = request.scope["path"]
     if path == "/app" or path.startswith("/app/"):
         request.scope["path"] = path[4:] or "/"
+    if request.scope["path"] == "/api/live-analysis" and request.method == "POST":
+        async def bounded_body() -> bytes:
+            payload = bytearray()
+            async for chunk in request.stream():
+                if len(payload) + len(chunk) > 1024:
+                    raise ValueError()
+                payload.extend(chunk)
+            return bytes(payload)
+        try:
+            request._body = await asyncio.wait_for(bounded_body(), timeout=5)
+        except ValueError:
+            return Response('Live analysis request exceeds 1 KiB limit', status_code=413)
+        except asyncio.TimeoutError:
+            return Response('Live analysis request body timed out', status_code=408)
     return await call_next(request)
 
 
@@ -322,6 +339,41 @@ def api_claim(claim_id: str, include_agent: bool = False) -> dict[str, Any]:
         raise HTTPException(status_code=503, detail="VSS credentials not configured")
     anchor = _anchor_segment()
     return _build_claim_review(claim, anchor=anchor, include_agent=include_agent)
+
+
+class LiveAnalysisRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    incident_id: str = Field(min_length=1, max_length=120)
+
+
+live_limit = RequestLimit()
+
+
+@app.post("/api/live-analysis")
+def api_live_analysis(body: LiveAnalysisRequest, request: Request, response: Response) -> dict[str, Any]:
+    response.headers["Cache-Control"] = "no-store"
+    if request.headers.get("sec-fetch-site") == "cross-site":
+        raise HTTPException(403, "Cross-site live inference is not allowed")
+    if MODE != "vast":
+        raise HTTPException(409, "Live inference is unavailable in synthetic fixture mode")
+    if body.incident_id != INCIDENT["id"] or not INCIDENT.get("footage_permitted"):
+        raise HTTPException(403, "Video is not the selected authorized incident")
+    try:
+        settings = GPUSettings.from_env()
+        settings.require_preflight(INCIDENT["source"])
+    except LiveError as exc:
+        raise HTTPException(503, str(exc)) from None
+    try:
+        with live_limit.reserve():
+            try:
+                meta = vss.segment_metadata(INCIDENT["source"])
+                validate_evidence(meta, metadata=True)
+                video = read_video(vss, INCIDENT["source"])
+            except (VSSAuthError, VSSAPIError, LiveError):
+                raise HTTPException(502, "Authorized video retrieval failed, timed out, or exceeded limits") from None
+            return asyncio.run(analyze(settings, video, INCIDENT))
+    except LiveError as exc:
+        raise HTTPException(429, str(exc), headers={"Retry-After": "30"}) from None
 
 
 @app.get("/api/media/stream")

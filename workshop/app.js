@@ -342,6 +342,8 @@
     try {
       const review = await fetchReview(includeAgent);
       state.review = review;
+      $("btn-live").disabled = Boolean(review.synthetic) || !review.incident?.footage_permitted;
+      if (review.synthetic) $("live-results").textContent = "Live inference is unavailable in synthetic fixture mode.";
       if (review.disclaimer) $("disclaimer").innerHTML = `<strong>Notice.</strong> ${escapeHtml(review.disclaimer)}`;
       renderChips(review);
       renderSummary(review);
@@ -357,6 +359,37 @@
       $("load-status").classList.add("err");
     }
   }
+
+  $("btn-live").addEventListener("click", async () => {
+    const button = $("btn-live");
+    const panel = $("live-results");
+    button.disabled = true;
+    panel.textContent = "Retrieving authorized video and running Cosmos + YOLO…";
+    try {
+      const response = await fetch(apiUrl("/api/live-analysis"), {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ incident_id: state.review.incident.id }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(typeof data.detail === "string" ? data.detail : `API ${response.status}`);
+      const rows = [`Live inference: ${data.status} · ${data.analyzed_at}`,
+        `Reviewed parent-video window: ${data.evidence_window_sec.start}–${data.evidence_window_sec.end}s`];
+      for (const name of ["cosmos", "yolo"]) {
+        const result = data[name];
+        rows.push(`${result.model}: ${result.status} · live_inference=${result.live_inference}`);
+        if (result.error) rows.push(result.error);
+        if (result.description) rows.push(result.description);
+        if (result.object_classes) rows.push(`Classes: ${result.object_classes.join(", ") || "none reported"}`);
+        if (result.object_counts) rows.push(`Counts: ${JSON.stringify(result.object_counts)}`);
+      }
+      rows.push(data.uncertainty, "Existing claim verdicts and indexed evidence are unchanged.");
+      panel.textContent = rows.join("\n\n");
+    } catch (error) {
+      panel.textContent = `Live analysis unavailable: ${error.message || error}`;
+    } finally {
+      button.disabled = Boolean(state.review?.synthetic) || !state.review?.incident?.footage_permitted;
+    }
+  });
 
   $("btn-refresh").addEventListener("click", () => load(false));
   $("btn-agent").addEventListener("click", () => load(true));
