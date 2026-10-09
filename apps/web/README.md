@@ -8,7 +8,7 @@ no API, contract, or backend files are modified from here.
 
 ```sh
 cd apps/web
-npm install
+npm ci
 npm run dev
 ```
 
@@ -28,7 +28,9 @@ The dashboard calls, in order:
 
 1. `GET /incidents/{id}` — incident, statements, duration
 2. `GET /incidents/{id}/results` — claims, verdicts, observations (409 = not analyzed yet)
-3. `POST /incidents/{id}/analyze` — synchronous analysis, then re-fetch results
+3. `POST /incidents/{id}/analyze` — synchronous mock or bounded real job
+4. `GET /incidents/{id}/status` — poll real jobs to completion before fetching results
+5. `GET /incidents/{id}/media` — original local MP4 for non-mock incidents (byte ranges supported)
 
 Default API base is `http://localhost:8000`. Override with:
 
@@ -41,7 +43,7 @@ CORS on the backend already allows `localhost:3000` and `127.0.0.1:3000`.
 ## Fixture mode
 
 When the API is unreachable and the incident is `demo-001`, the dashboard falls back
-to bundled fixtures copied verbatim from `packages/contracts/examples/*.json`, with a
+to bundled fixtures imported directly from `packages/contracts/examples/*.json`, with a
 visible "Fixture mode" chip plus the Demo/Mock banner. Force it with
 `?fixture=1` or `NEXT_PUBLIC_WITNESS_FIXTURE=1`. Fixture data is never presented as
 fresh analysis or real inference.

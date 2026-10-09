@@ -63,7 +63,7 @@ describe("IncidentDashboard (fixture mode)", () => {
     const panel = screen.getByTestId("evidence-panel");
     expect(panel).toHaveTextContent("Model evidence (1)");
     expect(panel).toHaveTextContent("Detector observations — YOLO cross-check (1)");
-    expect(panel).toHaveTextContent("scripted_lane_change");
+    expect(panel).toHaveTextContent("vehicle_lateral_image_shift");
     expect(panel).toHaveTextContent("not independent corroboration");
   });
 });

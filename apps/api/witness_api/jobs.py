@@ -24,6 +24,10 @@ class Jobs:
         self.states: OrderedDict[str, AnalysisStatus] = OrderedDict()
         self.closed = False
 
+    def get(self, incident_id: str) -> AnalysisStatus | None:
+        with self.lock:
+            return self.states.get(incident_id)
+
     def submit(self, incident: Incident) -> AnalysisStatus:
         with self.lock:
             existing = self.states.get(incident.id)
@@ -32,7 +36,7 @@ class Jobs:
             if self.closed or sum(s.state in ('pending', 'running') for s in self.states.values()) >= self.capacity:
                 raise QueueFull('Analysis queue is full; retry later')
             status = AnalysisStatus(incident_id=incident.id, state='pending', is_mock=incident.is_mock,
-                                    detail='Queued; repeat POST /analyze to poll until completed or failed.')
+                                    detail='Queued; GET /incidents/{incident_id}/status to poll until completed or failed.')
             # Terminal states are sticky until process restart, so repeated POST is safe polling.
             self.states[incident.id] = status
             while len(self.states) > self.history:
@@ -49,7 +53,7 @@ class Jobs:
             return status
 
     def _run(self, incident: Incident) -> None:
-        self._state(incident, 'running', 'Analysis in progress; repeat POST /analyze to poll.')
+        self._state(incident, 'running', 'Analysis in progress; GET /incidents/{incident_id}/status to poll.')
         try:
             self.store.save_report(self.runner.analyze(incident))
         except Exception as error:

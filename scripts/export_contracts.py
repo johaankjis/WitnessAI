@@ -4,7 +4,7 @@ from pathlib import Path
 from witness_contracts import (Incident, DriverStatement, AtomicClaim, EvidenceWindow,
     DetectorObservation, ClaimVerdict, IncidentReport, AnalysisStatus)
 from witness_api.main import create_app, ROOT
-from witness_api.mock import MockAdapters
+from witness_api.config import configured_pipeline
 from witness_api.pipeline import Pipeline
 
 def export():
@@ -13,8 +13,7 @@ def export():
                   ClaimVerdict, IncidentReport, AnalysisStatus):
         (base / "schemas" / f"{model.__name__}.schema.json").write_text(json.dumps(model.model_json_schema(), indent=2) + "\n")
     incident = Incident.model_validate_json((ROOT / "data/demo/incident.json").read_text())
-    mock = MockAdapters()
-    report = Pipeline(mock, mock, mock, mock, mock, mock).analyze(incident)
+    report = configured_pipeline("mock").analyze(incident)
     examples = {"Incident": incident, "DriverStatement": incident.statements[0], "AtomicClaim": report.claims[0],
         "EvidenceWindow": report.verdicts[0].evidence[0], "DetectorObservation": report.observations[0],
         "ClaimVerdict": report.verdicts[0], "IncidentReport": report,

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import VideoPlayer from "./VideoPlayer";
 
@@ -75,4 +75,13 @@ describe("VideoPlayer", () => {
     expect(onSeeked).toHaveBeenCalledWith(20);
     expect(screen.getByTestId("video-time-readout")).toHaveTextContent("0:20.0");
   });
+});
+
+it("applies the pending evidence timestamp when media metadata loads", () => {
+  render(<VideoPlayer videoUri="http://localhost:8000/incidents/real/media"
+    durationSeconds={20} seekToSeconds={8} seekToken={1} />);
+  const video = screen.getByTestId("video-element") as HTMLVideoElement;
+  video.currentTime = 0;
+  fireEvent.loadedMetadata(video);
+  expect(video.currentTime).toBe(8);
 });

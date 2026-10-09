@@ -76,6 +76,11 @@ export default function VideoPlayer({
           preload="metadata"
           src={videoUri}
           className="aspect-video w-full bg-black"
+          onLoadedMetadata={(event) => {
+            if (seekToSeconds !== null) {
+              event.currentTarget.currentTime = clampTime(seekToSeconds, durationSeconds);
+            }
+          }}
           onTimeUpdate={(event) => {
             const time = event.currentTarget.currentTime;
             setCurrentTime(time);

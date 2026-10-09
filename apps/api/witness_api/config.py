@@ -8,10 +8,11 @@ from .jobs import AnalysisRunner
 def configured_pipeline(mode: str) -> AnalysisRunner:
     if mode == 'mock':
         mock = MockAdapters()
-        return Pipeline(mock, mock, mock, mock, mock, mock)
+        from witness_vision.adapter import MockVisionObserver
+        return Pipeline(mock, mock, mock, MockVisionObserver(), mock, mock)
     if mode != 'real':
         raise ValueError('WITNESS_ANALYSIS_MODE must be mock or real')
-    # HTTPX is optional for credential-free mock deployments.
+    # Provider transports are constructed only after explicit real-mode selection.
     from .provider_io import ChatTransport
     from .providers import WandbAdapter, RealPipeline
     from .media import LocalMedia
@@ -27,5 +28,12 @@ def configured_pipeline(mode: str) -> AnalysisRunner:
         project=os.getenv('WANDB_INFERENCE_PROJECT', ''), **options)
     cosmos = ChatTransport('cosmos', required('COSMOS_BASE_URL'),
         os.getenv('COSMOS_MODEL', 'nvidia/Cosmos-Reason2-8B'), os.getenv('COSMOS_API_KEY', ''), **options)
+    from witness_vision.adapter import VisionObserver
+    from witness_vision.detectors import UltralyticsDetector
+    weights = Path(required('WITNESS_YOLO_WEIGHTS')).resolve()
+    if not weights.is_file():
+        raise ValueError('WITNESS_YOLO_WEIGHTS must be an existing local weights file')
+    observer = VisionObserver(detector=UltralyticsDetector(weights=str(weights)),
+                              media_root=Path(required('WITNESS_MEDIA_ROOT')))
     return RealPipeline(WandbAdapter(wandb), cosmos, LocalMedia(Path(required('WITNESS_MEDIA_ROOT')),
-        ffprobe=os.getenv('WITNESS_FFPROBE', 'ffprobe')))
+        ffprobe=os.getenv('WITNESS_FFPROBE', 'ffprobe')), observer=observer)

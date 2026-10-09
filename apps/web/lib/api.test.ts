@@ -81,3 +81,28 @@ describe("typed API client", () => {
     expect(isUnreachable(error)).toBe(true);
   });
 });
+
+describe("analysis polling", () => {
+  it("polls GET status until completed without submitting another job", async () => {
+    const { waitForAnalysis } = await import("./api");
+    vi.useFakeTimers();
+    try {
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce(jsonResponse({ ...FIXTURE_STATUS, state: "running" }))
+        .mockResolvedValueOnce(jsonResponse(FIXTURE_STATUS));
+      vi.stubGlobal("fetch", fetchMock);
+      const states: string[] = [];
+      const result = waitForAnalysis("demo-001", { ...FIXTURE_STATUS, state: "pending" }, s => states.push(s.state));
+      await vi.runAllTimersAsync();
+      expect((await result).state).toBe("completed");
+      expect(states).toEqual(["pending", "running", "completed"]);
+      expect(fetchMock.mock.calls.every(([url]) => url.endsWith("/status"))).toBe(true);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("surfaces failed jobs without requesting results", async () => {
+    const { waitForAnalysis } = await import("./api");
+    await expect(waitForAnalysis("demo-001", { ...FIXTURE_STATUS, state: "failed", detail: "Failed safely" }, () => {}))
+      .rejects.toThrow("Failed safely");
+  });
+});
