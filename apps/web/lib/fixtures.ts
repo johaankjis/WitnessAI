@@ -1,7 +1,7 @@
 import type { AnalysisStatus, Incident, IncidentReport } from "./contracts";
-import incident from "../../../packages/contracts/examples/Incident.json";
-import report from "../../../packages/contracts/examples/IncidentReport.json";
-import status from "../../../packages/contracts/examples/AnalysisStatus.json";
+import incident from "./fixtures/Incident.json";
+import report from "./fixtures/IncidentReport.json";
+import status from "./fixtures/AnalysisStatus.json";
 
 // Offline fallback only, always labeled DEMO/MOCK and never fresh inference.
 export const FIXTURE_INCIDENT_ID = "demo-001";

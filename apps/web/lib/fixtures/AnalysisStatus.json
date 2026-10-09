@@ -1,0 +1,6 @@
+{
+  "incident_id": "demo-001",
+  "state": "completed",
+  "is_mock": true,
+  "detail": "Mock analysis complete."
+}
