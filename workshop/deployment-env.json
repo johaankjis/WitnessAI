@@ -1,0 +1,30 @@
+{
+  "env": [
+    {
+      "name": "WITNESS_WORKSHOP_MODE",
+      "value": "vast"
+    },
+    {
+      "name": "VSS_URL",
+      "value": "http://video-backend-service.team-6.svc.cluster.local:8000"
+    },
+    {
+      "name": "VSS_USERNAME",
+      "valueFrom": {
+        "secretKeyRef": {
+          "name": "REPLACE_WITH_EXISTING_SECRET",
+          "key": "VSS_USERNAME"
+        }
+      }
+    },
+    {
+      "name": "VSS_PASSWORD",
+      "valueFrom": {
+        "secretKeyRef": {
+          "name": "REPLACE_WITH_EXISTING_SECRET",
+          "key": "VSS_PASSWORD"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "demo-001",
+  "title": "Synthetic lane-change dispute",
+  "video_uri": "mock://demo-001/no-video",
+  "duration_seconds": 20,
+  "is_mock": true,
+  "statements": [
+    {
+      "id": "statement-a",
+      "driver_id": "driver-a",
+      "text": "Driver B moved into my lane. I braked. My traffic light was green."
+    },
+    {
+      "id": "statement-b",
+      "driver_id": "driver-b",
+      "text": "I stayed in my lane. Driver A did not brake."
+    }
+  ]
+}

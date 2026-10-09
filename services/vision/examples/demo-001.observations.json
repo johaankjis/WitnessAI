@@ -1,0 +1,127 @@
+[
+  {
+    "id": "vision-c1-vehicle_lateral_image_shift-track1",
+    "claim_id": "c1",
+    "label": "vehicle_lateral_image_shift",
+    "evidence": {
+      "video_uri": "mock://demo-001/no-video",
+      "start_seconds": 9.2,
+      "end_seconds": 12.2,
+      "visibility": "visible",
+      "description": "SYNTHETIC, no footage analyzed. Detector event window 9.20-12.20s around fastest box growth (track 1, frame 112, t=11.20s). Track 1 (car) box centre moved leftward 12.9% of frame width from frame 92 (t=9.20s) to frame 122 (t=12.20s). Image-space motion only: lane markings and dashcam motion are not measured, so this is not by itself a lane-change determination. [sampled frames 92-122 (16 @ 5 fps)]",
+      "provenance": {
+        "adapter": "witness-vision-mock",
+        "version": "0.1.0",
+        "source": "scripted synthetic scene 'demo-lane-change-v1'; no video analyzed",
+        "is_mock": true
+      }
+    },
+    "confidence": null,
+    "provenance": {
+      "adapter": "witness-vision-mock",
+      "version": "0.1.0",
+      "source": "scripted synthetic scene 'demo-lane-change-v1'; no video analyzed",
+      "is_mock": true
+    }
+  },
+  {
+    "id": "vision-c2-braking_unknown",
+    "claim_id": "c2",
+    "label": "braking_unknown",
+    "evidence": {
+      "video_uri": "mock://demo-001/no-video",
+      "start_seconds": 9.2,
+      "end_seconds": 12.2,
+      "visibility": "not_visible",
+      "description": "SYNTHETIC, no footage analyzed. Detector event window 9.20-12.20s around fastest box growth (track 1, frame 112, t=11.20s). Braking cannot be determined from bounding boxes (brake lights and vehicle speed are not measured). Largest box growth: track 1 (car) area x4.97 frames 92-122; this shows the image gap changing, not which vehicle slowed. [sampled frames 92-122 (16 @ 5 fps)]",
+      "provenance": {
+        "adapter": "witness-vision-mock",
+        "version": "0.1.0",
+        "source": "scripted synthetic scene 'demo-lane-change-v1'; no video analyzed",
+        "is_mock": true
+      }
+    },
+    "confidence": null,
+    "provenance": {
+      "adapter": "witness-vision-mock",
+      "version": "0.1.0",
+      "source": "scripted synthetic scene 'demo-lane-change-v1'; no video analyzed",
+      "is_mock": true
+    }
+  },
+  {
+    "id": "vision-c3-traffic_light_not_visible",
+    "claim_id": "c3",
+    "label": "traffic_light_not_visible",
+    "evidence": {
+      "video_uri": "mock://demo-001/no-video",
+      "start_seconds": 9.2,
+      "end_seconds": 12.2,
+      "visibility": "not_visible",
+      "description": "SYNTHETIC, no footage analyzed. Detector event window 9.20-12.20s around fastest box growth (track 1, frame 112, t=11.20s). No traffic light was detected in this window; its state is unknown, which neither supports nor contradicts the claim. [sampled frames 92-122 (16 @ 5 fps)]",
+      "provenance": {
+        "adapter": "witness-vision-mock",
+        "version": "0.1.0",
+        "source": "scripted synthetic scene 'demo-lane-change-v1'; no video analyzed",
+        "is_mock": true
+      }
+    },
+    "confidence": null,
+    "provenance": {
+      "adapter": "witness-vision-mock",
+      "version": "0.1.0",
+      "source": "scripted synthetic scene 'demo-lane-change-v1'; no video analyzed",
+      "is_mock": true
+    }
+  },
+  {
+    "id": "vision-c4-vehicle_lateral_image_shift-track1",
+    "claim_id": "c4",
+    "label": "vehicle_lateral_image_shift",
+    "evidence": {
+      "video_uri": "mock://demo-001/no-video",
+      "start_seconds": 9.2,
+      "end_seconds": 12.2,
+      "visibility": "visible",
+      "description": "SYNTHETIC, no footage analyzed. Detector event window 9.20-12.20s around fastest box growth (track 1, frame 112, t=11.20s). Track 1 (car) box centre moved leftward 12.9% of frame width from frame 92 (t=9.20s) to frame 122 (t=12.20s). Image-space motion only: lane markings and dashcam motion are not measured, so this is not by itself a lane-change determination. [sampled frames 92-122 (16 @ 5 fps)]",
+      "provenance": {
+        "adapter": "witness-vision-mock",
+        "version": "0.1.0",
+        "source": "scripted synthetic scene 'demo-lane-change-v1'; no video analyzed",
+        "is_mock": true
+      }
+    },
+    "confidence": null,
+    "provenance": {
+      "adapter": "witness-vision-mock",
+      "version": "0.1.0",
+      "source": "scripted synthetic scene 'demo-lane-change-v1'; no video analyzed",
+      "is_mock": true
+    }
+  },
+  {
+    "id": "vision-c5-braking_unknown",
+    "claim_id": "c5",
+    "label": "braking_unknown",
+    "evidence": {
+      "video_uri": "mock://demo-001/no-video",
+      "start_seconds": 9.2,
+      "end_seconds": 12.2,
+      "visibility": "not_visible",
+      "description": "SYNTHETIC, no footage analyzed. Detector event window 9.20-12.20s around fastest box growth (track 1, frame 112, t=11.20s). Braking cannot be determined from bounding boxes (brake lights and vehicle speed are not measured). Largest box growth: track 1 (car) area x4.97 frames 92-122; this shows the image gap changing, not which vehicle slowed. [sampled frames 92-122 (16 @ 5 fps)]",
+      "provenance": {
+        "adapter": "witness-vision-mock",
+        "version": "0.1.0",
+        "source": "scripted synthetic scene 'demo-lane-change-v1'; no video analyzed",
+        "is_mock": true
+      }
+    },
+    "confidence": null,
+    "provenance": {
+      "adapter": "witness-vision-mock",
+      "version": "0.1.0",
+      "source": "scripted synthetic scene 'demo-lane-change-v1'; no video analyzed",
+      "is_mock": true
+    }
+  }
+]

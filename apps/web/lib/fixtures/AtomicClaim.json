@@ -1,0 +1,7 @@
+{
+  "id": "c1",
+  "statement_id": "statement-a",
+  "text": "Driver B moved into my lane.",
+  "subject": "driver-b",
+  "category": "lane_change"
+}

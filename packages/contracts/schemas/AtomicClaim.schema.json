@@ -1,0 +1,41 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "statement_id": {
+      "title": "Statement Id",
+      "type": "string"
+    },
+    "text": {
+      "minLength": 1,
+      "title": "Text",
+      "type": "string"
+    },
+    "subject": {
+      "title": "Subject",
+      "type": "string"
+    },
+    "category": {
+      "enum": [
+        "lane_change",
+        "braking",
+        "traffic_signal",
+        "other"
+      ],
+      "title": "Category",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "statement_id",
+    "text",
+    "subject",
+    "category"
+  ],
+  "title": "AtomicClaim",
+  "type": "object"
+}

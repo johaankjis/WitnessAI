@@ -1,0 +1,35 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "incident_id": {
+      "title": "Incident Id",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "pending",
+        "running",
+        "completed",
+        "failed"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "is_mock": {
+      "title": "Is Mock",
+      "type": "boolean"
+    },
+    "detail": {
+      "title": "Detail",
+      "type": "string"
+    }
+  },
+  "required": [
+    "incident_id",
+    "state",
+    "is_mock",
+    "detail"
+  ],
+  "title": "AnalysisStatus",
+  "type": "object"
+}

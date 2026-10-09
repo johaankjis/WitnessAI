@@ -1,0 +1,13 @@
+{
+  "video_uri": "mock://demo-001/no-video",
+  "start_seconds": 8.0,
+  "end_seconds": 12.0,
+  "visibility": "visible",
+  "description": "Scripted demo event: B changes lanes and A brakes. No real footage exists.",
+  "provenance": {
+    "adapter": "deterministic-mock",
+    "version": "1.0",
+    "source": "synthetic fixture; no video analyzed",
+    "is_mock": true
+  }
+}

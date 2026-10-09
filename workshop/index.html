@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>document.write('<base href="' + (location.pathname === '/app' || location.pathname.startsWith('/app/') ? '/app/' : '/') + '">');</script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Witness workshop demo: sentence-level dashcam claim review with timestamped evidence. Illustrative only; human review required." />
+  <title>Witness — Workshop MVP</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#statements">Skip to claim cards</a>
+
+  <div class="banner" id="disclaimer" role="note" aria-label="Demo disclaimer">
+    <strong>Illustrative workshop demo.</strong>
+    Statements are team-authored fixtures — not real driver claims or liability findings.
+    Evidence mode is shown after loading. Human review required.
+    No binding liability conclusion.
+  </div>
+
+  <header class="app-head">
+    <div class="brand">
+      <p class="eyebrow">Witness workshop · VAST Builders Challenge · team-6</p>
+      <h1>Evidence-grounded statement review</h1>
+      <p class="sub">Each claim is checked against the same dashcam window and shown with its timestamped evidence.</p>
+    </div>
+    <div class="head-side">
+      <div class="meta-chips" id="chips" aria-label="Evidence identifiers"></div>
+      <div class="verdict-summary" id="verdict-summary" aria-live="polite" aria-label="Verdict counts"></div>
+    </div>
+  </header>
+
+  <div class="status-bar">
+    <span id="load-status" role="status" aria-live="polite">Loading review…</span>
+    <span class="actions">
+      <button class="refresh primary" id="btn-refresh" type="button">Reload evidence</button>
+      <button class="refresh" id="btn-agent" type="button">Reload + scoped agent notes</button>
+    </span>
+  </div>
+
+  <p class="legend" aria-label="Evidence legend">
+    <span class="legend-item observed"><span class="dot" aria-hidden="true"></span>Observed evidence — Cosmos description, YOLO measurements</span>
+    <span class="legend-item advisory"><span class="dot" aria-hidden="true"></span>Advisory synthesis — search similarity, agent notes (never proof)</span>
+  </p>
+
+  <main class="dashboard">
+    <section class="panel stage" aria-labelledby="stage-heading">
+      <div class="stage-head">
+        <div>
+          <h2 id="stage-heading">Evidence video</h2>
+          <p id="media-note" class="muted"></p>
+        </div>
+        <p class="now-playing muted" id="now-playing" aria-live="off"></p>
+      </div>
+      <div class="playback-grid">
+      <div class="video-column">
+      <video id="player" controls preload="metadata" playsinline aria-label="Evidence video player"></video>
+      <div class="video-progress" aria-hidden="true"><span id="window-band" hidden></span><span id="playhead"></span></div>
+      <p id="window-status" class="window-status">25–30s analyzed window</p>
+      </div>
+      <aside class="timeline-column" aria-label="Interactive evidence timeline">
+      <div class="timeline-head">
+        <h3>Evidence timeline</h3>
+        <p class="muted hint">Six claims in the 25–30s analyzed window. Select a claim to seek and inspect evidence. Other footage is context only.</p>
+      </div>
+      <div class="timeline" id="timeline" role="group" aria-label="Claim evidence markers"></div>
+      </aside>
+      </div>
+      <section class="live-analysis" aria-labelledby="live-heading">
+        <h3 id="live-heading">Fresh GPU observations</h3>
+        <button class="refresh" id="btn-live" type="button" disabled>Run Live AI Analysis</button>
+        <p class="muted hint">Analyzes only the verified 25–30s segment, even during full-video playback. Separate from indexed evidence and claim verdicts. Human review required; no fault determination.</p>
+        <div id="live-results" role="status" aria-live="polite">Load authorized footage to run live analysis.</div>
+      </section>
+
+    </section>
+
+    <aside class="panel inspector" id="inspector" aria-labelledby="inspector-heading">
+      <h2 id="inspector-heading">Claim evidence inspector</h2>
+      <div class="muted" id="inspector-empty">Select a claim to inspect Cosmos descriptions, YOLO measurements, and verdict rationale.</div>
+      <div id="inspector-body" hidden></div>
+    </aside>
+  </main>
+
+  <section class="claims-section" aria-labelledby="claims-heading">
+    <div class="claims-head">
+      <h2 id="claims-heading">Statements &amp; claims</h2>
+      <p class="muted hint">Six checkable claims across two illustrative statements. Press <kbd>1</kbd>–<kbd>6</kbd> to jump between claims; Tab and Enter work throughout.</p>
+    </div>
+    <div class="statements" id="statements"></div>
+  </section>
+
+  <footer class="notes">
+    <p><strong>Human review required. No binding liability conclusion.</strong></p>
+    <p>
+      In VAST mode, provenance: Cosmos <em>reasoning_content</em> is observational caption text from ingest;
+      YOLO detections are object measurements. Semantic search similarity and optional VSS agent
+      answers are advisory only and never treated as objective proof. W&amp;B inference is disabled
+      for this MVP. In fixture mode all captions, objects, and answers are synthetic. This workshop app is separate from any Mac-based Witness product codebase.
+    </p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

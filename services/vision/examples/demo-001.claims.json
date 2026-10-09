@@ -1,0 +1,37 @@
+[
+  {
+    "id": "c1",
+    "statement_id": "statement-a",
+    "text": "Driver B moved into my lane.",
+    "subject": "driver-b",
+    "category": "lane_change"
+  },
+  {
+    "id": "c2",
+    "statement_id": "statement-a",
+    "text": "I braked.",
+    "subject": "driver-a",
+    "category": "braking"
+  },
+  {
+    "id": "c3",
+    "statement_id": "statement-a",
+    "text": "My traffic light was green.",
+    "subject": "driver-a",
+    "category": "traffic_signal"
+  },
+  {
+    "id": "c4",
+    "statement_id": "statement-b",
+    "text": "I stayed in my lane.",
+    "subject": "driver-b",
+    "category": "lane_change"
+  },
+  {
+    "id": "c5",
+    "statement_id": "statement-b",
+    "text": "Driver A did not brake.",
+    "subject": "driver-a",
+    "category": "braking"
+  }
+]
