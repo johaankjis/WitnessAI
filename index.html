@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WitnessAI — Claims Evidence Desk</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <div class="mark">W</div>
+      <div>
+        <strong>WitnessAI</strong>
+        <span>Video risk desk · VSS archive, valid corpus queries only</span>
+      </div>
+    </div>
+    <div class="status">
+      <span class="pill warn">No crash footage in this index</span>
+      <span class="pill">Near-miss liability demo</span>
+    </div>
+  </header>
+
+  <section class="banner">
+    This archive does <strong>not</strong> contain labeled crash footage. It does contain valid roadway
+    and warehouse interaction events that match the Architecture Reference: <code>truck changing lanes on the highway</code>,
+    <code>pedestrian near the curb</code>, <code>two vehicles close together</code>, and
+    <code>person close to a moving vehicle</code>. This desk scores those events and drafts a liability hypothesis
+    from indexed <code>reasoning_content</code> without claiming an accident was captured.
+    <div class="live-note">
+      Live VSS data source: <a href="https://team-6-vss.thecosmoslabs.com/search" target="_blank" rel="noopener">team-6 VSS search</a>.
+      This local demo consumes live evidence metadata when available; actual clip playback depends on authenticated media URLs from the backend.
+    </div>
+  </section>
+
+  <main class="layout">
+    <aside class="col search">
+      <h2>Find evidence</h2>
+      <p class="hint">Use only valid dataset queries from the challenge schema. Filters map to VastDB columns.</p>
+
+      <label>Natural-language query</label>
+      <div class="row">
+        <input id="q" type="text" value="truck changing lanes on the highway" />
+        <button id="go" type="button">Search</button>
+      </div>
+
+      <div class="chips" id="chips"></div>
+
+      <label>camera_id</label>
+      <select id="camera">
+        <option value="">All cameras</option>
+        <option value="i24_cam-1">i24_cam-1 · Nashville I-24</option>
+        <option value="pie_cam-3">pie_cam-3 · Toronto PIE</option>
+        <option value="neighborhood_cam-1">neighborhood_cam-1</option>
+        <option value="sdg_warehouse_cam-2">sdg_warehouse_cam-2</option>
+      </select>
+
+      <label>capture_type</label>
+      <select id="capture">
+        <option value="">All types</option>
+        <option value="traffic">traffic</option>
+        <option value="streets">streets</option>
+        <option value="warehouse">warehouse</option>
+      </select>
+
+      <label>location</label>
+      <select id="location">
+        <option value="">All locations</option>
+        <option value="nashville">nashville</option>
+        <option value="toronto">toronto</option>
+        <option value="neighborhood">neighborhood</option>
+        <option value="warehouse3">warehouse3</option>
+      </select>
+
+      <pre class="api" id="api"></pre>
+    </aside>
+
+    <section class="col results">
+      <div class="results-head">
+        <h2 id="count">Results</h2>
+        <span id="meta"></span>
+      </div>
+      <div id="list"></div>
+    </section>
+
+    <section class="col case">
+      <h2>Claim file</h2>
+      <div id="case" class="empty-case">Select a clip to draft a liability opinion from indexed captions.</div>
+      <div id="video-panel" class="video-panel hidden">
+        <div class="video-placeholder">
+          <div class="video-icon">▶</div>
+          <div class="video-text">No playable media URL is available in this local demo.</div>
+        </div>
+        <button id="play-button" class="play-button hidden" type="button">Play clip</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Evidence text is sourced from the valid challenge corpus and the indexed captions on this team’s archive.
+    Fault % is a demo estimate from interaction cues — not a legal determination.
+    This app intentionally avoids fake crash footage and instead demonstrates valid near-miss / duty-of-care events.
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
