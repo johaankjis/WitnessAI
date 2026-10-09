@@ -21,6 +21,7 @@ from config import mode, vast_settings
 from fixtures import FixtureClient, LABEL, SOURCE, VIDEO
 from copy import deepcopy
 import math
+import re
 
 from incident import INCIDENT, all_claims, get_claim, get_incident_bundle
 from verdicts import map_claim_verdict, seek_time_for_claim
@@ -292,7 +293,8 @@ def build_full_review(*, include_agent: bool = False) -> dict[str, Any]:
         "claim_reviews": claim_rows,
         "timeline": timeline,
         "ui": {
-            "video_url": "/api/media/stream" if MODE == "vast" else None,
+            "video_url": "/api/media/full" if MODE == "vast" else None,
+            "fallback_video_url": "/api/media/stream" if MODE == "vast" else None,
             "human_review_required": True,
             "binding_liability_conclusion": False,
             "collision_claimed": False,
@@ -376,34 +378,62 @@ def api_live_analysis(body: LiveAnalysisRequest, request: Request, response: Res
         raise HTTPException(429, str(exc), headers={"Retry-After": "30"}) from None
 
 
+@app.get("/api/media/full")
+def api_media_full(request: Request) -> Response:
+    """Only the configured, authorized parent video; no caller-supplied source."""
+    return _stream_media(request, INCIDENT["original_video"])
+
+
 @app.get("/api/media/stream")
 def api_media_stream(request: Request) -> Response:
-    """Proxy VSS range-capable stream; keep JWT server-side."""
-    if not vss.configured():
-        raise HTTPException(status_code=503, detail="VSS credentials not configured")
+    """Retained five-second segment fallback (also used separately by live inference)."""
+    return _stream_media(request, INCIDENT["source"])
+
+
+def _stream_media(request: Request, source: str) -> Response:
     if MODE == "fixture":
         raise HTTPException(404, "Synthetic fixtures have no video footage")
+    if not INCIDENT.get("footage_permitted") or request.query_params:
+        raise HTTPException(403, "Only the selected authorized video is available")
+    if not vss.configured():
+        raise HTTPException(503, "VSS credentials not configured")
     range_header = request.headers.get("range")
+    if range_header is not None:
+        match = re.fullmatch(r"bytes=(\d{0,20})-(\d{0,20})", range_header)
+        if not match or not any(match.groups()):
+            raise HTTPException(400, "A single byte range is required")
+        start, end = match.groups()
+        if (start and end and int(start) > int(end)) or (not start and int(end) == 0):
+            raise HTTPException(400, "Invalid byte range")
     try:
-        upstream = vss.open_stream(INCIDENT["source"], range_header=range_header)
-    except VSSAuthError as exc:
-        raise HTTPException(status_code=502, detail=f"VSS auth failed: {exc}") from exc
+        upstream = vss.open_stream(source, range_header=range_header)
+    except VSSAuthError:
+        raise HTTPException(502, "Video authorization failed") from None
     except VSSAPIError as exc:
-        raise HTTPException(status_code=502, detail=f"stream failed: {exc}") from exc
+        if exc.status_code == 416:
+            raise HTTPException(416, "Video byte range is not satisfiable") from None
+        raise HTTPException(502, "Video retrieval failed") from None
 
-    headers = {}
-    for key in (
-        "Content-Type",
-        "Content-Length",
-        "Content-Range",
-        "Accept-Ranges",
-        "Cache-Control",
-    ):
-        if key in upstream.headers:
-            headers[key] = upstream.headers[key]
-    if "Content-Type" not in headers:
-        headers["Content-Type"] = "video/mp4"
-    headers["Accept-Ranges"] = headers.get("Accept-Ranges", "bytes")
+    # Only numeric range metadata crosses the proxy; never upstream URLs or cookies.
+    headers = {"Content-Type": "video/mp4", "Accept-Ranges": "bytes", "Cache-Control": "no-store"}
+    length = upstream.headers.get("Content-Length")
+    content_range = upstream.headers.get("Content-Range")
+    valid_range = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+)", content_range or "")
+    invalid = upstream.status_code not in {200, 206}
+    invalid |= length is not None and not re.fullmatch(r"\d{1,20}", length)
+    if upstream.status_code == 206:
+        invalid |= valid_range is None
+        if valid_range:
+            first, last, total = map(int, valid_range.groups())
+            invalid |= not (first <= last < total)
+            invalid |= length is not None and length.isdigit() and int(length) != last - first + 1
+    if invalid:
+        upstream.close()
+        raise HTTPException(502, "Invalid video stream response")
+    if length is not None:
+        headers["Content-Length"] = length
+    if upstream.status_code == 206:
+        headers["Content-Range"] = content_range
 
     def iter_bytes():
         try:
@@ -415,12 +445,8 @@ def api_media_stream(request: Request) -> Response:
         finally:
             upstream.close()
 
-    return StreamingResponse(
-        iter_bytes(),
-        status_code=upstream.status_code,
-        headers=headers,
-        media_type=headers.get("Content-Type", "video/mp4"),
-    )
+    return StreamingResponse(iter_bytes(), status_code=upstream.status_code,
+                             headers=headers, media_type="video/mp4")
 
 
 @app.get("/")

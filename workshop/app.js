@@ -6,6 +6,8 @@
   const state = {
     review: null,
     selectedClaimId: null,
+    videoMode: "parent",
+    pendingSeek: null,
   };
 
   const $ = (id) => document.getElementById(id);
@@ -150,9 +152,9 @@
       .map((t) => {
         const active = state.selectedClaimId === t.claim_id;
         return `
-          <button type="button" role="listitem" class="tl-btn${active ? " active" : ""}" data-claim="${escapeHtml(t.claim_id)}"
-            ${active ? 'aria-current="true"' : ""} aria-label="Seek to ${escapeHtml(t.label)} at clip ${fmtSec(t.seek_sec)}">
-            <div class="t">${fmtSec(t.seek_sec)} \u00B7 abs ${fmtSec(t.seek_absolute_sec)}</div>
+          <button type="button" class="tl-btn${active ? " active" : ""}" data-claim="${escapeHtml(t.claim_id)}"
+            ${active ? 'aria-current="true"' : ""} aria-label="Seek to ${escapeHtml(t.label)} at parent video ${fmtSec(t.seek_absolute_sec)}">
+            <div class="t">${fmtSec(t.seek_absolute_sec)} parent \u00B7 clip ${fmtSec(t.seek_sec)}</div>
             <div class="tl-label">${escapeHtml(t.label)}</div>
             ${badgeHtml(t.verdict, t.verdict_label)}
           </button>`;
@@ -250,6 +252,10 @@
         <div class="mono" style="margin-top:8px;color:#9facc2">Similarity alone never sets Supported / Contradicted.</div>
       </div>
       <div class="block advisory">
+        <h3>Search synthesis <span class="tag adv">Advisory · not proof</span></h3>
+        <pre>${escapeHtml(row.evidence?.llm_synthesis_advisory || "No synthesis available.")}</pre>
+      </div>
+      <div class="block advisory">
         <h3>Scoped agent note (advisory \u00B7 not proof) <span class="tag adv">Advisory</span></h3>
         <pre>${escapeHtml(row.evidence?.agent_answer_advisory || row.evidence?.agent_error || "Not requested. Use \u201CReload + scoped agent notes\u201D.")}</pre>
       </div>
@@ -257,21 +263,20 @@
   }
 
   function selectClaim(claimId) {
+    const timelineFocused = $("timeline").contains(document.activeElement);
     state.selectedClaimId = claimId;
     const row = claimById(claimId);
     renderStatements(state.review);
     renderTimeline(state.review);
     renderInspector(row);
+    if (timelineFocused) {
+      const selected = $("timeline").querySelector('[aria-current="true"]');
+      if (selected) selected.focus();
+    }
     const player = $("player");
     if (row && player && !state.review.synthetic) {
-      const t = Number(row.seek_sec) || 0;
-      const seek = () => {
-        try {
-          player.currentTime = t;
-        } catch (_) { /* ignore */ }
-      };
-      if (player.readyState >= 1) seek();
-      else player.addEventListener("loadedmetadata", seek, { once: true });
+      state.pendingSeek = row;
+      applyPendingSeek();
       player.play().catch(() => {});
     }
   }
@@ -295,20 +300,65 @@
     }
     if (note) note.remove();
     player.hidden = false;
-    $("media-note").textContent = "VAST footage; human review required.";
-    const url = apiUrl(review.ui.video_url);
-    if (player.getAttribute("src") !== url) {
-      player.src = url;
+    state.videoMode = "parent";
+    state.pendingSeek = null;
+    player.src = apiUrl(review.ui.video_url);
+    updatePlayback();
+  }
+
+  function applyPendingSeek() {
+    const player = $("player");
+    const row = state.pendingSeek;
+    if (!row || player.readyState < 1) return;
+    const time = Number(state.videoMode === "parent" ? row.seek_absolute_sec : row.seek_sec);
+    if (!Number.isFinite(time) || time < 0) return;
+    try {
+      player.currentTime = time;
+      state.pendingSeek = null;
+    } catch (_) { /* retry once metadata becomes available */ }
+  }
+
+  function updatePlayback() {
+    if (!state.review || state.review.synthetic) return;
+    const player = $("player");
+    const w = state.review.incident.evidence_window_sec;
+    const parent = state.videoMode === "parent";
+    const absolute = player.currentTime + (parent ? 0 : w.start);
+    $("media-note").textContent = parent
+      ? "Full parent video · human review required."
+      : "Segment fallback · full video unavailable · only 25–30s · human review required.";
+    $("now-playing").textContent = `Parent ${fmtSec(absolute)}${parent ? "" : ` · clip ${fmtSec(player.currentTime)}`}`;
+    const inside = absolute >= w.start && absolute <= w.end;
+    $("window-status").textContent = `${w.start}–${w.end}s analyzed window · ${inside ? "inside reviewed window" : "outside reviewed window — context only"}`;
+    $("window-status").classList.toggle("in-window", inside);
+    const duration = player.duration;
+    const band = $("window-band");
+    band.hidden = !Number.isFinite(duration) || duration <= 0;
+    if (!band.hidden) {
+      band.style.left = `${parent ? Math.min(100, w.start / duration * 100) : 0}%`;
+      band.style.width = `${parent ? Math.max(0, (Math.min(w.end, duration) - w.start) / duration * 100) : 100}%`;
+      $("playhead").style.left = `${Math.min(100, player.currentTime / duration * 100)}%`;
     }
   }
 
   function trackPlayback() {
     const player = $("player");
-    player.addEventListener("timeupdate", () => {
+    player.addEventListener("timeupdate", updatePlayback);
+    player.addEventListener("loadedmetadata", () => {
+      applyPendingSeek();
+      updatePlayback();
+    });
+    player.addEventListener("error", () => {
       if (!state.review || state.review.synthetic) return;
-      const w = state.review.incident?.evidence_window_sec || {};
-      $("now-playing").textContent =
-        `at ${fmtSec(player.currentTime)} \u00B7 window ${w.start}\u2013${w.end}s (parent video)`;
+      if (state.videoMode === "parent" && state.review.ui.fallback_video_url) {
+        state.videoMode = "segment";
+        state.pendingSeek = claimById(state.selectedClaimId);
+        player.src = apiUrl(state.review.ui.fallback_video_url);
+        player.load();
+        updatePlayback();
+      } else {
+        $("media-note").textContent = "Video unavailable: full video and segment fallback failed. Evidence text remains available; human review required.";
+      }
     });
   }
 

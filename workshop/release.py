@@ -16,7 +16,7 @@ from config import INTERNAL_VSS_URL, mode, vast_settings
 ROOT = Path(__file__).resolve().parent
 RUNTIME = ('main.py', 'config.py', 'fixtures.py', 'vss_client.py', 'verdicts.py',
            'incident.py', 'wandb_adapter.py', 'live_inference.py', 'live_preflight.py', 'index.html', 'app.js', 'styles.css', 'requirements.txt')
-EXTRAS = ('release.py', 'README.md', 'DEPLOYMENT.md', 'TASK-005C.md', 'TASK-006B.md', 'TASK-007.md', 'deployment-env.json', 'start-mac.sh')
+EXTRAS = ('release.py', 'README.md', 'DEPLOYMENT.md', 'TASK-005C.md', 'TASK-006B.md', 'TASK-007.md', 'TASK-008.md', 'deployment-env.json', 'start-mac.sh')
 # Leave substantial room below Kubernetes' 1 MiB ConfigMap limit.
 MAX_CONFIGMAP = 750_000
 MAX_PACKAGE = 900_000

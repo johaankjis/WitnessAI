@@ -52,18 +52,27 @@
         </div>
         <p class="now-playing muted" id="now-playing" aria-live="off"></p>
       </div>
+      <div class="playback-grid">
+      <div class="video-column">
       <video id="player" controls preload="metadata" playsinline aria-label="Evidence video player"></video>
+      <div class="video-progress" aria-hidden="true"><span id="window-band" hidden></span><span id="playhead"></span></div>
+      <p id="window-status" class="window-status">25–30s analyzed window</p>
+      </div>
+      <aside class="timeline-column" aria-label="Interactive evidence timeline">
+      <div class="timeline-head">
+        <h3>Evidence timeline</h3>
+        <p class="muted hint">Six claims in the 25–30s analyzed window. Select a claim to seek and inspect evidence. Other footage is context only.</p>
+      </div>
+      <div class="timeline" id="timeline" role="group" aria-label="Claim evidence markers"></div>
+      </aside>
+      </div>
       <section class="live-analysis" aria-labelledby="live-heading">
         <h3 id="live-heading">Fresh GPU observations</h3>
         <button class="refresh" id="btn-live" type="button" disabled>Run Live AI Analysis</button>
-        <p class="muted hint">Separate from indexed evidence and claim verdicts. Human review required; no fault determination.</p>
+        <p class="muted hint">Analyzes only the verified 25–30s segment, even during full-video playback. Separate from indexed evidence and claim verdicts. Human review required; no fault determination.</p>
         <div id="live-results" role="status" aria-live="polite">Load authorized footage to run live analysis.</div>
       </section>
-      <div class="timeline-head">
-        <h3>Evidence timeline</h3>
-        <p class="muted hint">Each marker seeks the player to that claim&rsquo;s reviewed moment. Times are clip-relative with the parent-video absolute time.</p>
-      </div>
-      <div class="timeline" id="timeline" role="list" aria-label="Claim evidence markers"></div>
+
     </section>
 
     <aside class="panel inspector" id="inspector" aria-labelledby="inspector-heading">
