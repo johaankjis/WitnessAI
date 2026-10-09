@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>document.write('<base href="' + (location.pathname === '/app' || location.pathname.startsWith('/app/') ? '/app/' : '/') + '">');</script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Witness — Workshop MVP</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="banner" id="disclaimer">
+    <strong>Illustrative workshop demo.</strong>
+    Statements are team-authored fixtures — not real driver claims or liability findings.
+    Evidence mode is shown after loading. Human review required.
+    No binding liability conclusion.
+  </div>
+
+  <header class="app-head">
+    <div>
+      <h1>Witness</h1>
+      <div class="sub">Evidence-grounded statement review · VAST Builders Challenge · team-6</div>
+    </div>
+    <div class="meta-chips" id="chips"></div>
+  </header>
+
+  <div class="status-bar">
+    <span id="load-status">Loading review…</span>
+    <button class="refresh" id="btn-refresh" type="button">Reload evidence</button>
+    <button class="refresh" id="btn-agent" type="button">Reload + scoped agent notes</button>
+  </div>
+
+  <section class="layout-top">
+    <div class="panel">
+      <h2>Evidence video</h2>
+      <p id="media-note" class="muted"></p>
+      <video id="player" controls preload="metadata" playsinline></video>
+      <div class="timeline" id="timeline"></div>
+    </div>
+    <div class="panel inspector" id="inspector">
+      <h2>Claim evidence inspector</h2>
+      <div class="muted" id="inspector-empty">Select a claim to inspect Cosmos descriptions, YOLO measurements, and verdict rationale.</div>
+      <div id="inspector-body" hidden></div>
+    </div>
+  </section>
+
+  <section class="statements" id="statements"></section>
+
+  <footer class="notes">
+    In VAST mode, provenance: Cosmos <em>reasoning_content</em> is observational caption text from ingest;
+    YOLO detections are object measurements. Semantic search similarity and optional VSS agent
+    answers are advisory only and never treated as objective proof. W&amp;B inference is disabled
+    for this MVP. In fixture mode all captions, objects, and answers are synthetic. This workshop app is separate from any Mac-based Witness product codebase.
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
