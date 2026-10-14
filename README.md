@@ -44,3 +44,5 @@ Challenge rules: do **not** ingest internet crash videos. Re-run existing I-24 /
 > Describe each vehicle, lane, and any pedestrian. Note lane changes, hard braking, following distance, who yielded, and whether anyone is at fault for an unsafe interaction. If there is no incident, say so explicitly.
 
 Then search the same queries again.
+
+Submitted Project can be seen on this website as well: https://tokensand.com/p/witness-ai-powered-video-evidence-intelligence?public=1
